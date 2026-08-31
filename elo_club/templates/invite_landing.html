@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Group invite · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <article class="card form-card">
+    <div>
+      <p class="eyebrow">{{ t("You are invited") }}</p>
+      <h1>{{ t("Group invite") }}</h1>
+    </div>
+    {% if group %}
+      <div class="notice-banner">
+        {{ icon('laurel') }}
+        <span>{{ t("You were invited to join") }} <strong>{{ group.name }}</strong>.</span>
+      </div>
+      {% if group.description %}
+        <p>{{ group.description }}</p>
+      {% endif %}
+    {% else %}
+      <p>{{ t("This invite will take you to the join page with the group details already filled in.") }}</p>
+    {% endif %}
+    <dl class="stats-list">
+      <div><dt>{{ t("Group slug") }}</dt><dd><code>{{ invite_slug }}</code></dd></div>
+      <div><dt>{{ t("Invite code") }}</dt><dd><code>{{ invite_code }}</code></dd></div>
+    </dl>
+    <p class="subtle-note">{{ t("Sign in or create an account — the invite stays attached and the join page will be pre-filled.") }}</p>
+    <div class="button-row">
+      <a class="button" href="{{ url_for('login') }}">{{ icon('key') }}{{ t("Sign in to continue") }}</a>
+      <a class="button button-secondary" href="{{ url_for('register') }}">{{ t("Create account") }}</a>
+    </div>
+  </article>
+</section>
+{% endblock %}

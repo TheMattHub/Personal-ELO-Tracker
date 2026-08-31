@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Join group · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <form class="card form-card" method="post">
+    <div>
+      <p class="eyebrow">{{ t("Invitation") }}</p>
+      <h1>{{ t("Join a group") }}</h1>
+    </div>
+    {% if pending_invite %}
+      <div class="notice-banner">
+        {{ icon('link') }}
+        <span>{{ t("This invite link is ready. Review it and click join.") }}</span>
+      </div>
+    {% endif %}
+    <label>{{ t("Group slug") }}
+      <input type="text" name="slug" value="{{ prefilled_slug or (pending_invite.slug if pending_invite else '') }}" required>
+    </label>
+    <label>{{ t("Invite code") }}
+      <input type="text" name="invite_code" value="{{ prefilled_code or (pending_invite.invite_code if pending_invite else '') }}" required>
+    </label>
+    <button class="button" type="submit">{{ icon('key') }}{{ t("Join") }}</button>
+  </form>
+</section>
+{% endblock %}

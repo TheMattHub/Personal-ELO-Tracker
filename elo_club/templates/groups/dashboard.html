@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar, delta_chip, wdl_bar, form_dots, sparkline with context %}
+{% block title %}{{ group.name }} · Lunchbreak ELO{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+{% set trend_map = {} %}
+{% for tr in trends %}{% set _ = trend_map.update({tr.user_id: tr}) %}{% endfor %}
+
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ role_label(group.membership_role) }}</p>
+    <h1>{{ group.name }}</h1>
+    <p>{{ group.description or t("Private chess ladder for your team.") }}</p>
+  </div>
+  <div class="page-actions">
+    {% if pending_count %}
+      <a class="chip chip-warning" href="{{ url_for('group_confirmations', slug=group.slug) }}">{{ icon('clock') }}{{ pending_count }} {{ t("pending") }}</a>
+    {% endif %}
+    <a class="button button-secondary" href="{{ url_for('group_stats', slug=group.slug) }}">{{ icon('chart') }}{{ t("Stats") }}</a>
+    <a class="button" href="{{ url_for('group_matches', slug=group.slug) }}">{{ icon('plus') }}{{ t("Log match") }}</a>
+  </div>
+</section>
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('users') }}{{ t("Members") }}</span>
+    <span class="stat-tile-value">{{ members|length }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('swords') }}{{ t("Matches logged") }}</span>
+    <span class="stat-tile-value">{{ stats.total_matches or 0 }}</span>
+    <span class="stat-tile-note">{{ stats.standard_matches or 0 }} {{ t("Standard") }} {{ t("Matches") }} · {{ stats.braccio_matches or 0 }} {{ t("One Arm, One Brain") }} {{ t("Matches") }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('calendar') }}{{ t("Active season") }}</span>
+    <span class="stat-tile-value" style="font-size: 1.1rem; padding-top: 0.35rem;">{{ active_season.name if active_season else t("None") }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('belt') }}{{ t("Belt holder") }}</span>
+    <span class="stat-tile-value" style="font-size: 1.1rem; padding-top: 0.35rem;">{{ belt.current_holder_name or t("Unclaimed") }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('coffee') }}{{ t("Coffee balance") }}</span>
+    <span class="stat-tile-value {% if (coffee_balance.owed_to_me or 0) - (coffee_balance.i_owe or 0) > 0 %}delta-up{% elif (coffee_balance.owed_to_me or 0) - (coffee_balance.i_owe or 0) < 0 %}delta-down{% endif %}">
+      {{ '%+d' | format((coffee_balance.owed_to_me or 0) - (coffee_balance.i_owe or 0)) }}
+    </span>
+    <span class="stat-tile-note">+{{ coffee_balance.owed_to_me or 0 }} / -{{ coffee_balance.i_owe or 0 }}</span>
+  </div>
+</div>
+
+{% if leaderboard | length >= 3 and (stats.standard_matches or 0) > 0 %}
+  <div class="podium">
+    {% for position in [1, 0, 2] %}
+      {% set player = leaderboard[position] %}
+      <article class="podium-card podium-{{ position + 1 }}">
+        <span class="podium-medal rank rank-{{ placement_tier(position + 1) }}">{{ position + 1 }}</span>
+        {% if position == 0 %}{{ icon('crown', 'podium-crown') }}{% endif %}
+        <a class="avatar-link avatar-profile-link" aria-label="{{ t('View profile') }}: {{ player.name }}" href="{{ url_for('group_member_profile', slug=group.slug, user_id=player.id) }}">
+          {{ avatar(player, 'avatar-lg') }}
+        </a>
+        <span class="podium-name">{{ player.name }}</span>
+        {% if player.tagline %}<span class="podium-tagline">{{ player.tagline }}</span>{% endif %}
+        <div class="podium-rating">{{ player.rating|round|int }}</div>
+        <div class="podium-meta">
+          {{ delta_chip(player.last_delta) }}
+          <span class="chip chip-muted">{{ player.games }} {{ t("Games") }}</span>
+        </div>
+        {{ wdl_bar(player.wins, player.draws, player.losses) }}
+      </article>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<article class="card" style="margin-bottom: 1.05rem;">
+  <div class="section-head">
+    <h2 class="card-title">{{ icon('crown') }}{{ t("Leaderboard") }}</h2>
+    <div class="row-actions">
+      <div class="seg-tabs" data-tab-group="ladder" role="tablist">
+        <button type="button" class="is-active" data-tab-target="standard">{{ t("Standard") }}</button>
+        <button type="button" data-tab-target="braccio">{{ t("One Arm, One Brain") }}</button>
+      </div>
+      <a class="text-link" href="{{ url_for('export_leaderboard', slug=group.slug) }}">{{ icon('download') }}CSV</a>
+    </div>
+  </div>
+
+  <div data-panel="standard" data-panel-group="ladder">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 2.4rem;">#</th>
+            <th>{{ t("Player") }}</th>
+            <th class="num">{{ t("Rating") }}</th>
+            <th class="num">±</th>
+            <th class="lb-optional">{{ t("Record") }}</th>
+            <th class="num lb-optional">{{ t("Games") }}</th>
+            <th class="lb-optional">{{ t("Form") }}</th>
+            <th class="lb-optional">{{ t("Trend") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in leaderboard %}
+            {% set trend = trend_map.get(player.id) %}
+            <tr {% if player.id == g.user.id %}class="lb-row-me"{% endif %}>
+              <td><span class="rank rank-{{ placement_tier(loop.index) }}">{{ loop.index }}</span></td>
+              <td>
+                <div class="person-cell">
+                  <a class="avatar-link avatar-profile-link" aria-label="{{ t('View profile') }}: {{ player.name }}" href="{{ url_for('group_member_profile', slug=group.slug, user_id=player.id) }}">{{ avatar(player) }}</a>
+                  <div>
+                    <a class="person-name" href="{{ url_for('group_member_profile', slug=group.slug, user_id=player.id) }}">{{ player.name }}</a>
+                    {% if player.tagline %}<span class="person-sub">{{ player.tagline }}</span>{% endif %}
+                  </div>
+                </div>
+              </td>
+              <td class="num"><span class="lb-rating">{{ player.rating|round|int }}</span></td>
+              <td class="num">{{ delta_chip(player.last_delta) }}</td>
+              <td class="lb-optional">
+                <div style="display: grid; gap: 0.25rem; min-width: 6.5rem;">
+                  {{ wdl_bar(player.wins, player.draws, player.losses) }}
+                  <small style="font-variant-numeric: tabular-nums;">{{ player.wins }}W · {{ player.draws }}D · {{ player.losses }}L</small>
+                </div>
+              </td>
+              <td class="num lb-optional">{{ player.games }}</td>
+              <td class="lb-optional">{% if trend %}{{ form_dots(trend.recent_form) }}{% endif %}</td>
+              <td class="lb-optional">{{ sparkline(sparklines.get(player.id)) }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8">{{ t("No matches yet.") }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div data-panel="braccio" data-panel-group="ladder" aria-label="{{ t('One Arm, One Brain ladder') }}" hidden>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 2.4rem;">#</th>
+            <th>{{ t("Player") }}</th>
+            <th class="num">{{ t("Rating") }}</th>
+            <th class="num">±</th>
+            <th class="lb-optional">{{ t("Record") }}</th>
+            <th class="num lb-optional">{{ t("Games") }}</th>
+            <th class="lb-optional">{{ t("Trend") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set braccio_active = braccio_leaderboard | selectattr('games', 'gt', 0) | list %}
+          {% for player in braccio_active %}
+            <tr {% if player.id == g.user.id %}class="lb-row-me"{% endif %}>
+              <td><span class="rank rank-{{ placement_tier(loop.index) }}">{{ loop.index }}</span></td>
+              <td>
+                <div class="person-cell">
+                  <a class="avatar-link avatar-profile-link" aria-label="{{ t('View profile') }}: {{ player.name }}" href="{{ url_for('group_member_profile', slug=group.slug, user_id=player.id) }}">{{ avatar(player) }}</a>
+                  <div>
+                    <a class="person-name" href="{{ url_for('group_member_profile', slug=group.slug, user_id=player.id) }}">{{ player.name }}</a>
+                  </div>
+                </div>
+              </td>
+              <td class="num"><span class="lb-rating">{{ player.rating|round|int }}</span></td>
+              <td class="num">{{ delta_chip(player.last_delta) }}</td>
+              <td class="lb-optional">
+                <div style="display: grid; gap: 0.25rem; min-width: 6.5rem;">
+                  {{ wdl_bar(player.wins, player.draws, player.losses) }}
+                  <small style="font-variant-numeric: tabular-nums;">{{ player.wins }}W · {{ player.draws }}D · {{ player.losses }}L</small>
+                </div>
+              </td>
+              <td class="num lb-optional">{{ player.games }}</td>
+              <td class="lb-optional">{{ sparkline(braccio_sparklines.get(player.id)) }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7">{{ t("Play team matches to see rating trends.") }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</article>
+
+<div class="grid-rail">
+  <div class="rail-stack">
+    <article class="card">
+      <div class="section-head">
+        <h2 class="card-title">{{ icon('swords') }}{{ t("Recent matches") }}</h2>
+        <a class="text-link" href="{{ url_for('group_matches', slug=group.slug) }}">{{ t("Open match center") }} →</a>
+      </div>
+      <div class="list-stack">
+        {% for match in recent_matches %}
+          <div class="match-row">
+            <span class="match-outcome match-outcome-{{ match.result }}">
+              {% if match.result == 'white' %}1-0{% elif match.result == 'black' %}0-1{% else %}½{% endif %}
+            </span>
+            <div class="match-main">
+              <div class="match-players">
+                <span class="{% if match.result == 'white' %}match-winner{% elif match.result == 'black' %}match-loser{% endif %}">{{ match_side_label(match, 'white') }}</span>
+                <span class="match-vs">vs</span>
+                <span class="{% if match.result == 'black' %}match-winner{% elif match.result == 'white' %}match-loser{% endif %}">{{ match_side_label(match, 'black') }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="chip chip-muted">{{ icon('calendar') }}{{ match.played_at }}</span>
+                {% if match.game_type == 'one_arm_one_brain' %}<span class="chip chip-info">2v2</span>{% endif %}
+                {% if time_control_label(match) %}<span class="chip chip-muted">{{ icon('clock') }}{{ time_control_label(match) }}</span>{% endif %}
+                {% if match.season_name %}<span class="chip chip-muted">{{ match.season_name }}</span>{% endif %}
+                {% if match.opening_name %}<span class="chip chip-muted">{{ match.opening_name }}</span>{% endif %}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {{ icon('swords') }}
+            <strong>{{ t("No matches yet.") }}</strong>
+            <p>{{ t("Log the first game to start the ladder.") }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-head">
+        <h2 class="card-title">{{ icon('laurel', 'tint-gold') }}{{ t("Hall of Fame") }}</h2>
+        <a class="text-link" href="{{ url_for('group_winners', slug=group.slug) }}">{{ t("Open") }} →</a>
+      </div>
+      <div class="list-stack">
+        <div class="list-item">
+          <div class="person-cell">
+            <span class="rank rank-gold">{{ icon('crown') }}</span>
+            <div>
+              <strong>{{ hall_of_fame.champion.name if hall_of_fame.champion else t("Nobody yet") }}</strong>
+              <p>{{ t("Current champion") }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="person-cell">
+            <span class="rank">{{ icon('swords') }}</span>
+            <div>
+              <strong>{{ hall_of_fame.most_wins.name if hall_of_fame.most_wins else t("Nobody yet") }}</strong>
+              <p>{{ t("Most wins") }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="person-cell">
+            <span class="rank">{{ icon('bolt') }}</span>
+            <div>
+              <strong>{{ hall_of_fame.busiest.name if hall_of_fame.busiest else t("Nobody yet") }}</strong>
+              <p>{{ t("Most active") }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="rail-stack">
+    <article class="card">
+      <div class="section-head">
+        <h2 class="card-title">{{ icon('target', 'tint-ember') }}{{ t("Open challenges") }}</h2>
+        <a class="text-link" href="{{ url_for('group_challenges', slug=group.slug) }}">{{ t("All") }} →</a>
+      </div>
+      <div class="list-stack">
+        {% for challenge in open_challenges[:4] %}
+          <div class="list-item">
+            <div>
+              <strong>{{ challenge.challenger_name }} → {{ challenge.challenged_name }}</strong>
+              <p>{{ challenge_status_label(challenge.status) }}</p>
+            </div>
+            {% if challenge.status == 'accepted' %}
+              <a class="button button-small button-secondary" href="{{ url_for('group_matches', slug=group.slug, challenge=challenge.id) }}">{{ t("Log it") }}</a>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {{ icon('target', 'tint-ember') }}
+            <p>{{ t("No open challenges right now.") }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-head">
+        <h2 class="card-title">{{ icon('spark', 'tint-violet') }}{{ t("Suggested matchups") }}</h2>
+        <a class="text-link" href="{{ url_for('group_suggestions', slug=group.slug) }}">{{ t("All") }} →</a>
+      </div>
+      <div class="list-stack">
+        {% for item in suggestions[:3] %}
+          <div class="list-item">
+            <div>
+              <strong>{{ item.opponent.name }}</strong>
+              <p><span class="delta delta-up">+{{ item.win_points }}</span> / <span class="delta delta-down">-{{ item.loss_points }}</span> ELO{% if item.last_played %} · {{ item.last_played }}{% endif %}</p>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            {{ icon('spark', 'tint-violet') }}
+            <p>{{ t("Add more members first.") }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <h2 class="card-title">{{ icon('check-badge', 'tint-green') }}{{ t("Weekly missions") }}</h2>
+      <div style="margin-top: 0.4rem;">
+        {% for mission in missions %}
+          <div class="mission-row">
+            <div class="mission-head">
+              <strong>{{ mission.title }}</strong>
+              <span class="mission-count">{{ mission.progress }}/{{ mission.target }}</span>
+            </div>
+            <div class="progress-track">
+              <span class="progress-fill {% if mission.progress >= mission.target %}is-complete{% endif %}" style="width: {{ (100 * mission.progress / mission.target) | round | int }}%;"></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <h2 class="card-title">{{ icon('fire', 'tint-ember') }}{{ t("Win streaks") }}</h2>
+      <div class="list-stack list-plain">
+        {% set top_trends = trends | sort(attribute='win_streak', reverse=true) %}
+        {% for trend in top_trends[:3] if trend.win_streak > 0 %}
+          <div class="list-item">
+            <div>
+              <strong>{{ trend.name }}</strong>
+              <p>{{ trend.win_streak }} {{ t("win streak") }}</p>
+            </div>
+            {{ form_dots(trend.recent_form) }}
+          </div>
+        {% else %}
+          <p class="subtle-note">{{ t("No active streaks.") }}</p>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <h2 class="card-title">{{ icon('clock') }}{{ t("Need a nudge") }}</h2>
+      <div class="list-stack list-plain">
+        {% for item in nudges.inactive_players[:3] %}
+          <div class="list-item">
+            <div>
+              <strong>{{ item.name }}</strong>
+              <p>{% if item.last_played %}{{ t("Last game") }} {{ item.last_played }}{% else %}{{ t("Still waiting for a first game") }}{% endif %}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+
+    {% if team_standings %}
+      <article class="card">
+        <div class="section-head">
+          <h2 class="card-title">{{ icon('flag', 'tint-teal') }}{{ t("Team race") }}</h2>
+          <a class="text-link" href="{{ url_for('group_teams', slug=group.slug) }}">{{ t("All") }} →</a>
+        </div>
+        <div class="list-stack list-plain">
+          {% for team in team_standings[:3] %}
+            <div class="list-item">
+              <div class="person-cell">
+                <span class="team-swatch" style="background: {{ team.color }};"></span>
+                <div>
+                  <strong>{{ team.name }}</strong>
+                  <p>{{ team.points }} pts · {{ team.members }} {{ t("Members") | lower }}</p>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Teams · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Team events") }}</p>
+    <h1>{{ t("Create a team challenge") }}</h1>
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card" method="post">
+    <input type="hidden" name="action" value="create">
+    <h2 class="card-title">{{ icon('plus') }}{{ t("New team") }}</h2>
+    <label>{{ t("Name") }}
+      <input type="text" name="name" placeholder="Engineering" required>
+    </label>
+    <label>{{ t("Team color") }}
+      <input type="color" name="color" value="#247ba0">
+    </label>
+    <button class="button" type="submit">{{ icon('flag') }}{{ t("Create team") }}</button>
+  </form>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('trophy') }}{{ t("Standings") }}</h2>
+    </div>
+    <div class="list-stack list-plain">
+      {% for team in standings %}
+        <div class="list-item">
+          <div class="person-cell">
+            <span class="rank rank-{{ placement_tier(loop.index) }}">{{ loop.index }}</span>
+            <span class="team-swatch" style="background: {{ team.color }};"></span>
+            <div>
+              <strong>{{ team.name }}</strong>
+              <p>{{ team.wins }}W {{ team.draws }}D {{ team.losses }}L · {{ team.members }} {{ t("Members") | lower }}</p>
+            </div>
+          </div>
+          <span class="lb-rating">{{ team.points }} pts</span>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('flag') }}
+          <p>{{ t("No teams yet.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('users') }}{{ t("Assign players") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for member in members %}
+        {% set assignment = assignment_map.get(member.id) %}
+        <div class="list-item">
+          <form method="post" class="inline-form" style="width: 100%; justify-content: space-between;">
+            <input type="hidden" name="action" value="assign">
+            <input type="hidden" name="member_id" value="{{ member.id }}">
+            <strong>{{ member.name }}</strong>
+            <span class="inline-form">
+              <select name="team_id" style="width: auto; padding: 0.3rem 1.8rem 0.3rem 0.55rem; font-size: 0.82rem;">
+                <option value="">{{ t("No team") }}</option>
+                {% for team in teams %}
+                  <option value="{{ team.id }}" {% if assignment and assignment.team_id == team.id %}selected{% endif %}>{{ team.name }}</option>
+                {% endfor %}
+              </select>
+              <button class="button button-small button-secondary" type="submit">{{ t("Save") }}</button>
+            </span>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

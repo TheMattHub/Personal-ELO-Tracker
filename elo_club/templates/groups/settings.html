@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Settings · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<div class="form-page-shell">
+  <section class="page-intro">
+    <div>
+      <p class="eyebrow">{{ t("Workspace settings") }}</p>
+      <h1>{{ t("{group_name} settings", group_name=group.name) }}</h1>
+      <p>{{ t("Control joins, ratings, and group details.") }}</p>
+    </div>
+  </section>
+
+  <form class="card form-card" method="post">
+    <label>{{ t("Description") }}
+      <textarea name="description" rows="3">{{ group.description or '' }}</textarea>
+    </label>
+    <label>{{ t("Company email domain") }}
+      <input type="text" name="company_domain" value="{{ group.company_domain or '' }}">
+      <span class="field-help">{{ t("Optional: restrict joining to company email addresses.") }}</span>
+    </label>
+    <div class="form-grid">
+      <label>{{ t("Starting rating") }}
+        <input type="number" name="starting_rating" min="100" value="{{ group.starting_rating }}" required>
+      </label>
+      <label>{{ t("K-factor") }}
+        <input type="number" name="default_k_factor" min="4" value="{{ group.default_k_factor }}" required>
+      </label>
+    </div>
+    <div class="notice-banner">
+      {{ icon('key') }}
+      <span>{{ t("Current invite code") }}: <code>{{ group.invite_code }}</code></span>
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" name="rotate_invite_code">
+      {{ t("Rotate invite code on save") }}
+    </label>
+    {% if invite_urls %}
+      <div class="list-stack">
+        {% for invite in invite_urls %}
+          <div class="invite-link-row">
+            <span class="invite-link-label">{{ invite.network_label }} · {{ invite.link_label }}</span>
+            <code>{{ invite.url }}</code>
+            <button class="icon-button copy-button" type="button" data-copy="{{ invite.url }}" aria-label="{{ t('Copy') }}">{{ icon('copy') }}</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if role in ['owner', 'admin'] %}
+      <div class="button-row">
+        <button class="button" type="submit">{{ icon('check') }}{{ t("Save settings") }}</button>
+      </div>
+    {% else %}
+      <p class="subtle-note">{{ t("Only admins can update these settings.") }}</p>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

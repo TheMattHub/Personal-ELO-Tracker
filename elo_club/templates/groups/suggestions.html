@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar with context %}
+{% block title %}Suggestions · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Fun matchmaking") }}</p>
+    <h1>{{ t("Your suggested opponents") }}</h1>
+    <p>{{ t("Ranked by the ELO points you would gain by winning.") }}</p>
+  </div>
+</section>
+
+<article class="card">
+  {% if suggestions %}
+    <div class="table-scroll">
+      <table data-sortable-table data-default-sort="win">
+        <thead>
+          <tr>
+            <th>{{ t("Matchup") }}</th>
+            <th class="sortable-th"><button type="button" data-sort-column="opponent" data-sort-type="text">{{ t("Opponent") }} <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+            <th class="num sortable-th"><button type="button" data-sort-column="win" data-sort-type="number">{{ t("Win gain") }} <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+            <th class="num sortable-th"><button type="button" data-sort-column="loss" data-sort-type="number">{{ t("Loss cost") }} <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+            <th class="num sortable-th"><button type="button" data-sort-column="gap" data-sort-type="number">{{ t("Opponent gap") }} <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+            <th class="sortable-th lb-optional"><button type="button" data-sort-column="last-played" data-sort-type="date">{{ t("Last played") }} <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+            <th class="num sortable-th lb-optional"><button type="button" data-sort-column="meetings" data-sort-type="number">{{ t("Meetings") }} <span class="sort-indicator" aria-hidden="true">↕</span></button></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in suggestions %}
+            <tr
+              data-sort-opponent="{{ item.opponent.name|lower }}"
+              data-sort-win="{{ item.win_points }}"
+              data-sort-loss="{{ item.loss_points }}"
+              data-sort-gap="{{ item.rating_gap }}"
+              data-sort-last-played="{{ item.last_played or '' }}"
+              data-sort-meetings="{{ item.games }}"
+            >
+              <td>
+                <div class="person-cell">
+                  {{ avatar(item.player, 'avatar-sm') }}
+                  <span class="match-vs">VS</span>
+                  {{ avatar(item.opponent, 'avatar-sm') }}
+                </div>
+              </td>
+              <td>
+                <strong>{{ item.opponent.name }}</strong>
+                <span class="person-sub">{{ item.player.name }} vs {{ item.opponent.name }}</span>
+              </td>
+              <td class="num"><span class="delta delta-up">+{{ item.win_points }}</span></td>
+              <td class="num"><span class="delta delta-down">-{{ item.loss_points }}</span></td>
+              <td class="num">
+                {% if item.rating_gap > 0 %}+{% endif %}{{ item.rating_gap }}
+                <span class="person-sub">{% if item.rating_gap > 0 %}{{ t("opponent higher") }}{% elif item.rating_gap < 0 %}{{ t("you higher") }}{% else %}{{ t("even rating") }}{% endif %}</span>
+              </td>
+              <td class="lb-optional">{{ item.last_played or t("Never") }}</td>
+              <td class="num lb-optional">{{ item.games }}</td>
+              <td>
+                <form method="post" action="{{ url_for('group_challenges', slug=group.slug) }}">
+                  <input type="hidden" name="action" value="create">
+                  <input type="hidden" name="challenged_user_id" value="{{ item.opponent.id }}">
+                  <input type="hidden" name="challenge_source" value="suggestion">
+                  <input type="hidden" name="message" value="{{ item.player.name }} has spotted {{ item.win_points }} shiny ELO points on the board and would like to borrow them. Bring your best prep; the pawns have already started trash-talking.">
+                  <button class="button button-small" type="submit">{{ icon('target') }}{{ t("Challenge") }}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      {{ icon('spark') }}
+      <strong>{{ t("No suggestions yet") }}</strong>
+      <p>{{ t("Add more players to generate opponents for your account.") }}</p>
+    </div>
+  {% endif %}
+</article>
+{% endblock %}

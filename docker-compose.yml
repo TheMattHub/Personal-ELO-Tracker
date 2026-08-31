@@ -1,0 +1,11 @@
+services:
+  elo:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      SECRET_KEY: change-me
+      DATABASE_PATH: /app/instance/elo-club.sqlite3
+    volumes:
+      - ./instance:/app/instance
+      - ./data:/app/data

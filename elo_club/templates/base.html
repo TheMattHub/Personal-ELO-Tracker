@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="{{ current_language }}" data-theme="{{ current_theme }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="{{ current_theme }} {% if current_theme == 'dark' %}light{% else %}dark{% endif %}">
+    <title>{% block title %}Lunchbreak ELO{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/logo-mark.svg') }}">
+  </head>
+  <body>
+    {% from "_icons.html" import icon %}
+    <header class="app-header">
+      <div class="wrap header-row">
+        <a class="brand" href="{{ url_for('index') }}">
+          <span class="brand-mark">{{ icon('logo') }}</span>
+          <span class="brand-copy">
+            <strong>Lunchbreak ELO</strong>
+            <small>{{ t("Private chess ladder") }}</small>
+          </span>
+        </a>
+        <div class="header-inline-tools">
+          <button class="icon-button theme-toggle" type="button" data-theme-toggle aria-label="{{ t('Toggle theme') }}">
+            {{ icon('sun', 'icon-sun') }}{{ icon('moon', 'icon-moon') }}
+          </button>
+          <details class="language-menu" data-auto-close>
+            <summary aria-label="{{ t('Language') }}">
+              <img src="{{ language_flag(current_language) }}" alt="" class="language-flag">
+              <span class="language-caret">▾</span>
+            </summary>
+            <div class="language-dropdown">
+              {% for code, label in language_options.items() %}
+                <form method="post" action="{{ url_for('set_language') }}">
+                  <input type="hidden" name="next_url" value="{{ request.full_path if request.query_string else request.path }}">
+                  <input type="hidden" name="language" value="{{ code }}">
+                  <button class="language-option{% if code == current_language %} is-active{% endif %}" type="submit">
+                    <img src="{{ language_flag(code) }}" alt="" class="language-flag">
+                    <span>{{ label }}</span>
+                  </button>
+                </form>
+              {% endfor %}
+            </div>
+          </details>
+        </div>
+        <button class="icon-button mobile-header-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-header-tools" aria-label="{{ t('Toggle menu') }}">
+          {{ icon('menu') }}
+        </button>
+        <div class="header-tools" id="site-header-tools">
+          <nav class="nav">
+            {% if g.user %}
+              <a href="{{ url_for('account') }}" {% if request.endpoint == 'account' %}class="is-active"{% endif %}>{{ icon('user') }}{{ t("My account") }}</a>
+              <a href="{{ url_for('system_network') }}" {% if request.endpoint == 'system_network' %}class="is-active"{% endif %}>{{ icon('globe') }}{{ t("Network") }}</a>
+              {% if can_manage_app_data %}
+                <a href="{{ url_for('system_data') }}" {% if request.endpoint == 'system_data' %}class="is-active"{% endif %}>{{ icon('database') }}{{ t("Data") }}</a>
+              {% endif %}
+              <a href="{{ url_for('join_group') }}" {% if request.endpoint == 'join_group' %}class="is-active"{% endif %}>{{ icon('key') }}{{ t("Join group") }}</a>
+              <a class="nav-cta" href="{{ url_for('create_group') }}">{{ icon('plus') }}{{ t("Create group") }}</a>
+              <a href="{{ url_for('logout') }}">{{ icon('signout') }}{{ t("Sign out") }}</a>
+            {% else %}
+              <a href="{{ url_for('login') }}" {% if request.endpoint == 'login' %}class="is-active"{% endif %}>{{ icon('key') }}{{ t("Sign in") }}</a>
+              <a class="nav-cta" href="{{ url_for('register') }}">{{ icon('plus') }}{{ t("Create account") }}</a>
+            {% endif %}
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    {% block subheader %}{% endblock %}
+
+    <main class="wrap page">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack" role="status">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+              {% if category == 'success' %}{{ icon('check') }}
+              {% elif category == 'danger' %}{{ icon('alert') }}
+              {% elif category == 'warning' %}{{ icon('alert') }}
+              {% else %}{{ icon('info') }}{% endif %}
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if pending_achievement_unlocks %}
+      <div class="achievement-modal-shell" id="achievement-unlock-modal">
+        <div class="achievement-modal-backdrop"></div>
+        <div class="achievement-modal">
+          <p class="eyebrow">{{ t("Achievement unlocked") }}</p>
+          <h2>{{ t("New rewards for your profile") }}</h2>
+          <div class="achievement-popup-list">
+            {% for achievement in pending_achievement_unlocks %}
+              <article class="achievement-popup-card">
+                <span class="achievement-icon" style="background: {{ g.user.avatar_color or '#b5472f' }};">
+                  <img src="{{ achievement_reward_asset(achievement.achievement_key, achievement.reward_avatar_icon) }}" alt="">
+                </span>
+                <div>
+                  <strong>{{ achievement.name }}</strong>
+                  <p>{{ achievement.description }}</p>
+                  <p class="achievement-card-meta">{{ t("Reward title") }}: {{ achievement.reward_title }}{% if achievement.group_name %} · {{ achievement.group_name }}{% endif %}</p>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+          <div class="button-row">
+            <form method="post" action="{{ url_for('mark_achievement_notifications_read') }}">
+              <input type="hidden" name="next_url" value="{{ url_for('account') }}">
+              <button class="button button-secondary" type="submit">{{ t("Open profile rewards") }}</button>
+            </form>
+            <form method="post" action="{{ url_for('mark_achievement_notifications_read') }}">
+              <input type="hidden" name="next_url" value="{{ request.full_path if request.query_string else request.path }}">
+              <button class="button" type="submit">{{ t("Awesome") }}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <footer class="app-footer">
+      <div class="wrap">
+        <span>♟ Lunchbreak ELO</span>
+        <span>{{ t("Private chess ladder") }}</span>
+      </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='charts.js') }}" defer></script>
+  </body>
+</html>

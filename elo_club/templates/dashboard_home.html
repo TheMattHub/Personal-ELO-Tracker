@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Your groups · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Workspace") }}</p>
+    <h1>{{ t("Your groups") }}</h1>
+    <p>{{ t("Jump into a ladder, create a new one, or join with an invite code.") }}</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="{{ url_for('create_group') }}">{{ icon('plus') }}{{ t("Create group") }}</a>
+    <a class="button button-secondary" href="{{ url_for('join_group') }}">{{ icon('key') }}{{ t("Join group") }}</a>
+  </div>
+</section>
+
+{% if can_manage_app_data and signup_notifications %}
+  <article class="card" style="margin-bottom: 1.05rem;">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('bolt') }}{{ t("New signups") }}</h2>
+      <div class="button-row">
+        <a class="button button-small button-secondary" href="{{ url_for('system_data') }}">{{ t("Data") }}</a>
+        <form method="post" action="{{ url_for('mark_signup_notifications_read') }}">
+          <button class="button button-small button-ghost" type="submit">{{ t("Mark all read") }}</button>
+        </form>
+      </div>
+    </div>
+    <div class="list-stack">
+      {% for item in signup_notifications %}
+        <div class="list-item">
+          <div>
+            <strong>{{ item.new_user_name }}</strong>
+            <p>{{ item.new_user_email }}</p>
+          </div>
+          <small>{{ item.created_at }}</small>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+{% endif %}
+
+<div class="cards-grid">
+  {% for group in groups %}
+    <a class="card" href="{{ url_for('group_dashboard', slug=group.slug) }}">
+      <p class="eyebrow">{{ role_label(group.role) }}</p>
+      <h2>{{ group.name }}</h2>
+      <p>{{ group.description or t("No description yet.") }}</p>
+      <div class="meta-row">
+        <span class="chip chip-muted">{{ icon('link') }}{{ group.slug }}</span>
+        <span class="text-link">{{ t("Open workspace") }} →</span>
+      </div>
+    </a>
+  {% else %}
+    <article class="card span-3">
+      <div class="empty-state">
+        {{ icon('logo') }}
+        <strong>{{ t("No groups yet") }}</strong>
+        <p>{{ t("Create your first company ladder or join an existing one with an invite code.") }}</p>
+        <div class="button-row" style="margin-top: 0.5rem;">
+          <a class="button" href="{{ url_for('create_group') }}">{{ t("Create group") }}</a>
+          <a class="button button-secondary" href="{{ url_for('join_group') }}">{{ t("Join group") }}</a>
+        </div>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

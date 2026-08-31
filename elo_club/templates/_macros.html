@@ -1,0 +1,43 @@
+{% macro avatar(person, cls='') -%}
+  <span class="avatar {{ cls }}" style="background: {{ person.avatar_color or '#b5472f' }};">
+    {%- if person.avatar_icon and person.avatar_icon != 'initials' -%}
+      <img src="{{ avatar_asset(person.avatar_icon, person.id) }}" alt="" {% if person.avatar_icon == 'uploaded' %}class="avatar-photo"{% endif %}>
+    {%- else -%}
+      {{ avatar_initials(person.name) }}
+    {%- endif -%}
+  </span>
+{%- endmacro %}
+
+{% macro delta_chip(value) -%}
+  {%- set rounded = value | round(1) -%}
+  <span class="delta {% if rounded > 0 %}delta-up{% elif rounded < 0 %}delta-down{% else %}delta-flat{% endif %}">
+    {%- if rounded > 0 %}▲ +{{ rounded }}{% elif rounded < 0 %}▼ {{ rounded }}{% else %}—{% endif -%}
+  </span>
+{%- endmacro %}
+
+{% macro wdl_bar(wins, draws, losses) -%}
+  {%- set total = (wins or 0) + (draws or 0) + (losses or 0) -%}
+  <span class="wdl-bar" title="{{ wins }}W · {{ draws }}D · {{ losses }}L" aria-label="{{ wins }}W {{ draws }}D {{ losses }}L">
+    {%- if total > 0 -%}
+      {%- if wins %}<span class="wdl-w" style="flex: {{ wins }}"></span>{% endif -%}
+      {%- if draws %}<span class="wdl-d" style="flex: {{ draws }}"></span>{% endif -%}
+      {%- if losses %}<span class="wdl-l" style="flex: {{ losses }}"></span>{% endif -%}
+    {%- else -%}
+      <span class="wdl-empty"></span>
+    {%- endif -%}
+  </span>
+{%- endmacro %}
+
+{% macro form_dots(recent) -%}
+  <span class="form-dots" title="{{ recent }}">
+    {%- for outcome in recent if outcome in 'WLD' -%}
+      <span class="form-dot form-dot-{{ outcome }}"></span>
+    {%- endfor -%}
+  </span>
+{%- endmacro %}
+
+{% macro sparkline(values) -%}
+  {%- if values and values | length > 1 -%}
+    <svg class="sparkline" data-sparkline='{{ values | tojson }}' aria-hidden="true"></svg>
+  {%- endif -%}
+{%- endmacro %}

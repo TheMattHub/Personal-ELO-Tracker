@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Create account · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="auth-shell">
+  <form class="card form-card" method="post">
+    <div>
+      <p class="eyebrow">{{ t("Join the club") }}</p>
+      <h1>{{ t("Create account") }}</h1>
+    </div>
+    {% if session.get('pending_invite') %}
+      <div class="notice-banner">
+        {{ icon('link') }}
+        <span>{{ t("You have a pending invite ready and will be taken to the join page after sign-in.") }}</span>
+      </div>
+    {% endif %}
+    <p class="subtle-note">{{ t("If someone already logged matches for you as a guest, register with that same email to claim your account history.") }}</p>
+    <label>{{ t("Name") }}
+      <input type="text" name="name" autocomplete="name" required>
+    </label>
+    <label>{{ t("Email") }}
+      <input type="email" name="email" autocomplete="email" required>
+    </label>
+    <label>{{ t("Password") }}
+      <input type="password" name="password" minlength="8" autocomplete="new-password" required>
+      <span class="field-help">{{ t("At least 8 characters.") }}</span>
+    </label>
+    <button class="button" type="submit">{{ icon('plus') }}{{ t("Create account") }}</button>
+    <p class="subtle-note">{{ t("Already registered?") }} <a class="text-link" href="{{ url_for('login') }}">{{ t("Sign in") }}</a></p>
+  </form>
+</section>
+{% endblock %}

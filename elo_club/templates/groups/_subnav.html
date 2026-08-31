@@ -1,0 +1,41 @@
+{% from "_icons.html" import icon %}
+{% set tabs = [
+  ('group_dashboard', 'board', t('Overview')),
+  ('group_matches', 'swords', t('Matches')),
+  ('group_stats', 'chart', t('Stats')),
+  ('group_members', 'users', t('Members')),
+  ('group_challenges', 'target', t('Challenges')),
+  ('group_tournaments', 'trophy', t('Tournaments')),
+  ('group_coffee', 'coffee', t('Coffee')),
+  ('group_winners', 'laurel', t('Hall of Fame')),
+] %}
+{% set more_tabs = [
+  ('group_head_to_head', 'versus', t('Head to head')),
+  ('group_suggestions', 'spark', t('Suggestions')),
+  ('group_confirmations', 'check-badge', t('Confirmations')),
+  ('group_seasons', 'calendar', t('Seasons')),
+  ('group_teams', 'flag', t('Teams')),
+  ('group_pgn', 'scroll', t('PGN')),
+  ('group_settings', 'settings', t('Settings')),
+] %}
+{% set more_endpoints = more_tabs | map(attribute=0) | list %}
+<div class="group-subnav">
+  <div class="wrap group-subnav-row">
+    <a class="group-subnav-name" href="{{ url_for('group_dashboard', slug=group.slug) }}" title="{{ group.name }}">
+      {{ icon('logo') }}<span>{{ group.name }}</span>
+    </a>
+    <nav class="group-tabs" aria-label="{{ t('Group pages') }}">
+      {% for endpoint, tab_icon, label in tabs %}
+        <a href="{{ url_for(endpoint, slug=group.slug) }}" {% if request.endpoint == endpoint %}class="is-active" aria-current="page"{% endif %}>{{ icon(tab_icon) }}{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <details class="tab-more" data-auto-close>
+      <summary>{{ t("More") }} <span class="language-caret">▾</span></summary>
+      <div class="tab-more-menu">
+        {% for endpoint, tab_icon, label in more_tabs %}
+          <a href="{{ url_for(endpoint, slug=group.slug) }}" {% if request.endpoint == endpoint %}class="is-active"{% endif %}>{{ icon(tab_icon) }}{{ label }}</a>
+        {% endfor %}
+      </div>
+    </details>
+  </div>
+</div>

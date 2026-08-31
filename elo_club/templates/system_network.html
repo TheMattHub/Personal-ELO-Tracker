@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Network access · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Connectivity") }}</p>
+    <h1>{{ t("Network access") }}</h1>
+    <p>{{ t("Share one of these URLs with colleagues on the company LAN or VPN. Pick the address that matches the route they use to reach your laptop.") }}</p>
+  </div>
+</section>
+
+<section class="grid">
+  <article class="card span-2">
+    <h2 class="card-title">{{ icon('globe') }}{{ t("Shareable URLs") }}</h2>
+    {% if access_urls %}
+      <div class="list-stack" style="margin-top: 0.7rem;">
+        {% for item in access_urls %}
+          <div class="invite-link-row">
+            <span class="invite-link-label">{{ item.label }}</span>
+            <code>{{ item.url }}</code>
+            <button class="icon-button copy-button" type="button" data-copy="{{ item.url }}" aria-label="{{ t('Copy') }}">{{ icon('copy') }}</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>{{ t("No address was detected automatically. Check your laptop IP in your operating system network settings, then share") }} <code>http://YOUR-IP:5000</code>.</p>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <h2 class="card-title">{{ icon('check-badge') }}{{ t("Quick checklist") }}</h2>
+    <div class="list-plain list-stack" style="margin-top: 0.5rem;">
+      <div class="list-item"><div><p>{{ t("Run the app with") }} <code>python app.py</code>.</p></div></div>
+      <div class="list-item"><div><p>{{ t("Keep the host laptop awake and connected to the company LAN or VPN.") }}</p></div></div>
+      <div class="list-item"><div><p>{{ t("Share the URL that matches the network path your colleagues are using.") }}</p></div></div>
+      <div class="list-item"><div><p>{{ t("If someone cannot connect, check VPN routing and firewall rules first.") }}</p></div></div>
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('link') }}{{ t("Shareable invite links") }}</h2>
+      <p>{{ t("Paste one of these full links into Teams or WhatsApp.") }}</p>
+    </div>
+    {% if group_invites %}
+      <div class="list-stack">
+        {% for item in group_invites %}
+          <div class="card" style="box-shadow: none;">
+            <strong>{{ item.group.name }}</strong>
+            <div class="list-stack" style="margin-top: 0.6rem;">
+              {% for invite in item.invite_urls %}
+                <div class="invite-link-row">
+                  <span class="invite-link-label">{{ invite.network_label }} · {{ invite.link_label }}</span>
+                  <code>{{ invite.url }}</code>
+                  <button class="icon-button copy-button" type="button" data-copy="{{ invite.url }}" aria-label="{{ t('Copy') }}">{{ icon('copy') }}</button>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        {{ icon('link') }}
+        <strong>{{ t("No invite links yet") }}</strong>
+        <p>{{ t("Create or manage a group first to generate full invite links here.") }}</p>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <h2 class="card-title">{{ icon('search') }}{{ t("Find my IP") }}</h2>
+    <p>{{ t("The fastest checks on Windows are") }} <code>ipconfig</code> {{ t("in PowerShell or Command Prompt, or the in-app URLs above.") }}</p>
+    <p>{{ t("Look for the address on your company Wi-Fi, Ethernet, or VPN adapter, then share the matching URL.") }}</p>
+  </article>
+
+  <article class="card span-2">
+    <h2 class="card-title">{{ icon('globe') }}{{ t("For VPN users") }}</h2>
+    <p>{{ t("VPN colleagues can use the app if the company VPN can route to your laptop and Windows Firewall allows inbound traffic on port 5000 for the company or private network profile.") }}</p>
+  </article>
+</section>
+{% endblock %}

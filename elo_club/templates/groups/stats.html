@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import form_dots, wdl_bar with context %}
+{% block title %}Stats · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Analytics") }}</p>
+    <h1>{{ t("Competition trends") }}</h1>
+    <p>{{ t("Activity, rivalries, colors, and openings.") }}</p>
+  </div>
+</section>
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('users') }}{{ t("Members") }}</span>
+    <span class="stat-tile-value">{{ members|length }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('swords') }}{{ t("Matches tracked") }}</span>
+    <span class="stat-tile-value">{{ match_rows|length }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('chart') }}{{ t("Average games per player") }}</span>
+    <span class="stat-tile-value">{{ average_games }}</span>
+    <span class="stat-tile-note">2v2: {{ braccio_average_games }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('calendar') }}{{ t("Busiest day") }}</span>
+    <span class="stat-tile-value" style="font-size: 1.1rem; padding-top: 0.35rem;">{{ busiest_day.played_at if busiest_day else "—" }}</span>
+    {% if busiest_day %}<span class="stat-tile-note">{{ busiest_day.total }} {{ t("Matches") | lower }}</span>{% endif %}
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('belt', 'tint-gold') }}{{ t("Belt holder") }}</span>
+    <span class="stat-tile-value" style="font-size: 1.1rem; padding-top: 0.35rem;">{{ belt.current_holder_name or t("Unclaimed") }}</span>
+  </div>
+</div>
+
+<section class="grid">
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('chart') }}{{ t("Rating history") }}</h2>
+      {% if chart_data and chart_data.overflow %}
+        <p>{{ t("Top 8 most active players shown.") }}</p>
+      {% endif %}
+    </div>
+    {% if chart_data %}
+      <div class="chart-block" data-chart="line" data-chart-label="{{ t('Rating history chart') }}">
+        <script type="application/json">{{ chart_data | tojson }}</script>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        {{ icon('chart') }}
+        <p>{{ t("Play more matches to see rating trends.") }}</p>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('crown', 'tint-gold') }}{{ t("Leaderboard") }}</h2>
+      <p>{{ t("The table view behind the rating chart.") }}</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 2.4rem;">#</th>
+            <th>{{ t("Player") }}</th>
+            <th class="num">{{ t("Rating") }}</th>
+            <th class="num">{{ t("Wins") }}</th>
+            <th class="num">{{ t("Draws") }}</th>
+            <th class="num">{{ t("Losses") }}</th>
+            <th class="num">{{ t("Games") }}</th>
+            <th class="num lb-optional">{{ t("One Arm, One Brain") }} {{ t("Rating") }}</th>
+            <th class="num lb-optional">{{ t("Games") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in leaderboard %}
+            {% set braccio_row = braccio_leaderboard | selectattr('id', 'equalto', row.id) | list | first %}
+            <tr>
+              <td><span class="rank rank-{{ placement_tier(loop.index) }}">{{ loop.index }}</span></td>
+              <td>
+                <div class="person-cell">
+                  <a class="avatar-link avatar-profile-link" aria-label="{{ t('View profile') }}: {{ row.name }}" href="{{ url_for('group_member_profile', slug=group.slug, user_id=row.id) }}">
+                    <span class="avatar avatar-sm" style="background: {{ row.avatar_color or '#b5472f' }};">
+                      {%- if row.avatar_icon and row.avatar_icon != 'initials' -%}
+                        <img src="{{ avatar_asset(row.avatar_icon, row.id) }}" alt="" {% if row.avatar_icon == 'uploaded' %}class="avatar-photo"{% endif %}>
+                      {%- else -%}{{ avatar_initials(row.name) }}{%- endif -%}
+                    </span>
+                  </a>
+                  <a class="person-name" href="{{ url_for('group_member_profile', slug=group.slug, user_id=row.id) }}">{{ row.name }}</a>
+                </div>
+              </td>
+              <td class="num"><span class="lb-rating">{{ row.rating|round|int }}</span></td>
+              <td class="num">{{ row.wins }}</td>
+              <td class="num">{{ row.draws }}</td>
+              <td class="num">{{ row.losses }}</td>
+              <td class="num">{{ row.games }}</td>
+              <td class="num lb-optional">{{ (braccio_row.rating if braccio_row else 0)|round|int }}</td>
+              <td class="num lb-optional">{{ braccio_row.games if braccio_row else 0 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('chart') }}{{ t("Monthly activity") }}</h2>
+    </div>
+    {% if monthly_activity %}
+      {% set bar_items = [] %}
+      {% for row in monthly_activity %}
+        {% set _ = bar_items.append({"label": row.month[5:] if monthly_activity|length > 6 else row.month, "full": row.month, "value": row.total, "sub": (row.draws or 0) ~ " ½"}) %}
+      {% endfor %}
+      <div class="chart-block" data-chart="bars">
+        <script type="application/json">{{ {"items": bar_items} | tojson }}</script>
+      </div>
+    {% else %}
+      <div class="empty-state">{{ icon('calendar') }}<p>{{ t("No games this month yet.") }}</p></div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('fire', 'tint-ember') }}{{ t("Top rivalries") }}</h2>
+    </div>
+    <div class="list-stack list-plain">
+      {% for row in rivalry_rows[:6] %}
+        <div class="list-item">
+          <div>
+            <strong>{{ row.player_one }} <span class="match-vs">vs</span> {{ row.player_two }}</strong>
+            <p>{{ row.games }} {{ t("Games") | lower }}{% if row.draws %} · {{ row.draws }} {{ t("Draws") | lower }}{% endif %}</p>
+          </div>
+          <span class="chip chip-accent">{{ row.games }}</span>
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No rivalries yet.") }}</p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('chart') }}{{ t("One Arm, One Brain rating history") }}</h2>
+    </div>
+    {% if braccio_chart_data %}
+      <div class="chart-block" data-chart="line" data-chart-label="{{ t('One Arm, One Brain rating history chart') }}">
+        <script type="application/json">{{ braccio_chart_data | tojson }}</script>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        {{ icon('users') }}
+        <p>{{ t("Play team matches to see rating trends.") }}</p>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('board', 'tint-teal') }}{{ t("White vs Black performance") }}</h2>
+      <p>{{ t("Wins as each color.") }}</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ t("Player") }}</th>
+            <th class="num">{{ t("White") }}</th>
+            <th style="min-width: 7rem;"></th>
+            <th class="num">{{ t("Black") }}</th>
+            <th style="min-width: 7rem;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in color_stats %}
+            {% set white_games = row.white_games or 0 %}
+            {% set black_games = row.black_games or 0 %}
+            <tr>
+              <td><strong>{{ row.name }}</strong></td>
+              <td class="num">{{ row.white_wins or 0 }}/{{ white_games }}</td>
+              <td>
+                <span class="wdl-bar" title="{{ row.white_wins or 0 }}/{{ white_games }}">
+                  {% if white_games %}
+                    {% if row.white_wins %}<span class="wdl-w" style="flex: {{ row.white_wins }}"></span>{% endif %}
+                    {% if white_games - (row.white_wins or 0) %}<span class="wdl-empty" style="flex: {{ white_games - (row.white_wins or 0) }}"></span>{% endif %}
+                  {% else %}<span class="wdl-empty"></span>{% endif %}
+                </span>
+              </td>
+              <td class="num">{{ row.black_wins or 0 }}/{{ black_games }}</td>
+              <td>
+                <span class="wdl-bar" title="{{ row.black_wins or 0 }}/{{ black_games }}">
+                  {% if black_games %}
+                    {% if row.black_wins %}<span class="wdl-w" style="flex: {{ row.black_wins }}"></span>{% endif %}
+                    {% if black_games - (row.black_wins or 0) %}<span class="wdl-empty" style="flex: {{ black_games - (row.black_wins or 0) }}"></span>{% endif %}
+                  {% else %}<span class="wdl-empty"></span>{% endif %}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('belt', 'tint-gold') }}{{ t("Belt history") }}</h2>
+    </div>
+    <div class="list-stack list-plain">
+      {% for item in belt.history %}
+        <div class="list-item">
+          <div>
+            <strong>{{ item.holder_name }}</strong>
+            <p>{{ item.reason }} · {{ item.played_at }}</p>
+          </div>
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("The belt is still waiting for its first owner.") }}</p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('scroll', 'tint-violet') }}{{ t("Opening trends") }}</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ t("Opening") }}</th>
+            <th>{{ t("Code") }}</th>
+            <th class="num">{{ t("Games") }}</th>
+            <th style="min-width: 7rem;">{{ t("Results") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in opening_stats %}
+            <tr>
+              <td><strong>{{ row.opening_name }}</strong></td>
+              <td>{% if row.opening_code %}<code>{{ row.opening_code }}</code>{% else %}—{% endif %}</td>
+              <td class="num">{{ row.games }}</td>
+              <td>
+                <div style="display: grid; gap: 0.2rem;">
+                  {{ wdl_bar(row.white_wins, row.draws, row.black_wins) }}
+                  <small style="font-variant-numeric: tabular-nums;">{{ row.white_wins }} {{ t("White") | lower }} · {{ row.draws }} ½ · {{ row.black_wins }} {{ t("Black") | lower }}</small>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4">{{ t("No opening data yet.") }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('fire', 'tint-ember') }}{{ t("Form guide") }}</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ t("Player") }}</th>
+            <th>{{ t("Recent") }}</th>
+            <th class="num">{{ t("Streak") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in trends|sort(attribute='unbeaten_streak', reverse=true) %}
+            <tr>
+              <td><strong>{{ row.name }}</strong></td>
+              <td>{{ form_dots(row.recent_form) }}</td>
+              <td class="num">{{ row.win_streak }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('medal', 'tint-gold') }}{{ t("Records and milestones") }}</h2>
+    </div>
+    <div class="stat-row" style="margin-bottom: 0;">
+      <div class="stat-tile">
+        <span class="stat-tile-label">{{ icon('swords') }}{{ t("Biggest upset") }}</span>
+        {% if records.biggest_upset %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">{{ records.biggest_upset.winner_name }}</span>
+          <span class="stat-tile-note">{{ t("over") }} {{ records.biggest_upset.loser_name }} · +{{ records.biggest_upset.gap|round|int }}</span>
+        {% else %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">—</span>
+        {% endif %}
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile-label">{{ icon('arrow-up') }}{{ t("Best single gain") }}</span>
+        {% if records.biggest_gain %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">{{ records.biggest_gain.name }}</span>
+          <span class="stat-tile-note">+{{ records.biggest_gain.best_gain|round(1) }}</span>
+        {% else %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">—</span>
+        {% endif %}
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile-label">{{ icon('crown', 'tint-gold') }}{{ t("Peak rating") }}</span>
+        {% if records.peak_rating %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">{{ records.peak_rating.name }}</span>
+          <span class="stat-tile-note">{{ records.peak_rating.peak_rating|round|int }}</span>
+        {% else %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">—</span>
+        {% endif %}
+      </div>
+      <div class="stat-tile">
+        <span class="stat-tile-label">{{ icon('fire', 'tint-ember') }}{{ t("Best month") }}</span>
+        {% if records.hottest_month %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">{{ records.hottest_month.name }}</span>
+          <span class="stat-tile-note">+{{ records.hottest_month.monthly_gain|round(1) }} · {{ records.hottest_month.month_key }}</span>
+        {% else %}
+          <span class="stat-tile-value" style="font-size: 1.05rem; padding-top: 0.3rem;">—</span>
+        {% endif %}
+      </div>
+    </div>
+  </article>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('medal', 'tint-gold') }}{{ t("Achievement board") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for achievement in achievements %}
+        <div class="list-item">
+          <div>
+            <strong>{{ achievement.title }}</strong>
+            <p>{{ achievement.player }} — {{ achievement.description }}</p>
+          </div>
+          <span class="chip chip-gold">{{ icon('star') }}</span>
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No achievements unlocked yet.") }}</p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('flag') }}{{ t("Team standings") }}</h2>
+    </div>
+    <div class="list-stack list-plain">
+      {% for team in team_standings %}
+        <div class="list-item">
+          <div class="person-cell">
+            <span class="team-swatch" style="background: {{ team.color }};"></span>
+            <div>
+              <strong>{{ team.name }}</strong>
+              <p>{{ team.points }} pts · {{ team.wins }}W {{ team.draws }}D {{ team.losses }}L</p>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No teams created yet.") }}</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}{{ t("System data") }} · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Portability") }}</p>
+    <h1>{{ t("System data") }}</h1>
+    <p>{{ t("Download the current app state, keep repo snapshots, or import the same data into another laptop copy of the app.") }}</p>
+  </div>
+  <div class="page-actions">
+    <a class="button" href="{{ url_for('export_system_data') }}">{{ icon('download') }}{{ t("Download current data") }}</a>
+  </div>
+</section>
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('users') }}{{ t("Users") }}</span>
+    <span class="stat-tile-value">{{ totals.users }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('flag') }}{{ t("Groups") }}</span>
+    <span class="stat-tile-value">{{ totals.groups }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('check-badge') }}{{ t("Active memberships") }}</span>
+    <span class="stat-tile-value">{{ totals.memberships }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('swords') }}{{ t("Matches") }}</span>
+    <span class="stat-tile-value">{{ totals.matches }}</span>
+  </div>
+</div>
+
+<section class="grid">
+  <article class="card">
+    <h2 class="card-title">{{ icon('clock') }}{{ t("Latest snapshot") }}</h2>
+    <dl class="stats-list">
+      <div><dt>{{ t("Created") }}</dt><dd style="font-size: 0.8rem;">{{ snapshot.created_at[:19] }}</dd></div>
+      <div><dt>{{ t("Users") }}</dt><dd>{{ snapshot.tables.users|length }}</dd></div>
+      <div><dt>{{ t("Groups") }}</dt><dd>{{ snapshot.tables.groups_workspace|length }}</dd></div>
+      <div><dt>{{ t("Matches") }}</dt><dd>{{ snapshot.tables.matches|length }}</dd></div>
+    </dl>
+  </article>
+
+  <article class="card span-2">
+    <h2 class="card-title">{{ icon('database') }}{{ t("Storage") }}</h2>
+    <dl class="stats-list">
+      <div><dt>{{ t("Database file") }}</dt><dd><code>{{ db_path }}</code></dd></div>
+      <div><dt>{{ t("Snapshot folder") }}</dt><dd><code>{{ snapshot_dir }}</code></dd></div>
+    </dl>
+  </article>
+
+  <form class="card form-card span-2" method="post" enctype="multipart/form-data">
+    <h2 class="card-title">{{ icon('upload') }}{{ t("Import snapshot") }}</h2>
+    <p class="subtle-note">{{ t("Use this on another laptop after cloning the repo and starting the app locally.") }}</p>
+    <label>{{ t("Snapshot JSON") }}
+      <input type="file" name="snapshot_file" accept=".json,application/json" required>
+    </label>
+    <div class="button-row">
+      <button class="button" type="submit">{{ t("Import data") }}</button>
+    </div>
+  </form>
+
+  <form class="card form-card" method="get">
+    <h2 class="card-title">{{ icon('search') }}{{ t("Diagnostics") }}</h2>
+    <label>{{ t("Email lookup") }}
+      <input type="text" name="email" value="{{ lookup_email }}" placeholder="name@company.com">
+    </label>
+    <button class="button button-secondary" type="submit">{{ t("Look up account") }}</button>
+    {% if lookup_email %}
+      {% if lookup_user %}
+        <div class="list-item">
+          <div>
+            <strong>{{ lookup_user.name }}</strong>
+            <p>{{ lookup_user.email }}</p>
+            <p>{{ t("Created") }}: {{ lookup_user.created_at }}</p>
+          </div>
+        </div>
+        <div class="list-stack">
+          {% for item in lookup_memberships %}
+            <div class="list-item">
+              <div>
+                <strong>{{ item.name }}</strong>
+                <p>{{ item.slug }} · {{ role_label(item.role) }}{% if not item.is_active %} · {{ t("Inactive") }}{% endif %}</p>
+              </div>
+            </div>
+          {% else %}
+            <p class="subtle-note">{{ t("This account is not in any group yet.") }}</p>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No account found for this email.") }}</p>
+      {% endif %}
+    {% endif %}
+  </form>
+
+  <article class="card span-3">
+    <h2 class="card-title">{{ icon('users') }}{{ t("Recent signups") }}</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>{{ t("Name") }}</th>
+            <th>{{ t("Email") }}</th>
+            <th>{{ t("Created") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in recent_signups %}
+            <tr>
+              <td class="num">{{ item.id }}</td>
+              <td><strong>{{ item.name }}</strong></td>
+              <td>{{ item.email }}</td>
+              <td>{{ item.created_at }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4">{{ t("No users yet.") }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('medal') }}{{ t("Hidden achievement catalog") }}</h2>
+      <p>{{ t("Only admins can see the full unlock list, rewards, and current unlock counts.") }}</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>{{ t("Name") }}</th>
+            <th>{{ t("Rule") }}</th>
+            <th>{{ t("Reward title") }}</th>
+            <th class="num">{{ t("Unlocked") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for achievement in achievement_catalog %}
+            <tr>
+              <td><span class="achievement-icon" style="background: var(--surface-3); width: 2.1rem; height: 2.1rem; border-radius: 8px; display: grid; place-items: center;"><img src="{{ achievement_reward_asset(achievement.key, achievement.reward_avatar_icon) }}" alt="" style="width: 74%; height: 74%; object-fit: contain;"></span></td>
+              <td><strong>{{ achievement.name }}</strong><br><code>{{ achievement.key }}</code></td>
+              <td>{{ achievement.description }}</td>
+              <td>{{ achievement.reward_title }}</td>
+              <td class="num">{{ achievement.unlock_count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <h2 class="card-title">{{ icon('flag') }}{{ t("Groups") }}</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>{{ t("Group name") }}</th>
+            <th>Slug</th>
+            <th>{{ t("Owner") }}</th>
+            <th>{{ t("Created") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in groups %}
+            <tr>
+              <td class="num">{{ group.id }}</td>
+              <td><strong>{{ group.name }}</strong></td>
+              <td><code>{{ group.slug }}</code></td>
+              <td>{{ group.owner_name or "-" }}</td>
+              <td>{{ group.created_at }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5">{{ t("No groups yet.") }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('users') }}{{ t("Group members") }}</h2>
+      <p>{{ t("Owner-only removal tools for your groups.") }}</p>
+    </div>
+    <div class="list-stack">
+      {% for bundle in groups_with_members %}
+        <div class="card" style="box-shadow: none;">
+          <div class="section-head">
+            <div>
+              <strong>{{ bundle.group.name }}</strong>
+              <p><code>{{ bundle.group.slug }}</code></p>
+            </div>
+          </div>
+          <div class="list-stack">
+            {% for member in bundle.members %}
+              <div class="list-item">
+                <div>
+                  <strong>{{ member.name }}</strong>
+                  <p>{{ member.email }} · {{ role_label(member.role) }}</p>
+                </div>
+                {% if member.role != "owner" %}
+                  <form method="post">
+                    <input type="hidden" name="action" value="remove_member">
+                    <input type="hidden" name="group_id" value="{{ bundle.group.id }}">
+                    <input type="hidden" name="member_id" value="{{ member.id }}">
+                    <button class="button button-small button-danger-ghost" type="submit">{{ icon('trash') }}{{ t("Remove from group") }}</button>
+                  </form>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("You do not own any groups yet.") }}</p>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('user') }}{{ t("Orphan accounts") }}</h2>
+      <p>{{ t("Accounts with no active group membership.") }}</p>
+    </div>
+    <div class="list-stack">
+      {% for user in orphan_accounts %}
+        <div class="list-item">
+          <div>
+            <strong>{{ user.name }}</strong>
+            <p>{{ user.email }} · {{ t("Created") }}: {{ user.created_at }}</p>
+          </div>
+          {% if user.can_delete %}
+            <form method="post">
+              <input type="hidden" name="action" value="delete_orphan_account">
+              <input type="hidden" name="user_id" value="{{ user.id }}">
+              <button class="button button-small button-danger-ghost" type="submit">{{ icon('trash') }}{{ t("Delete account") }}</button>
+            </form>
+          {% else %}
+            <span class="chip chip-muted">{{ t("Has historical records") }}</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No orphan accounts found.") }}</p>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

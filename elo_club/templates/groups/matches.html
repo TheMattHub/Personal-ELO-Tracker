@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Matches · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Match center") }}</p>
+    <h1>{{ t("Log and manage games") }}</h1>
+  </div>
+  <div class="page-actions">
+    <a class="button button-small button-secondary" href="{{ url_for('export_matches', slug=group.slug) }}">{{ icon('download') }}CSV</a>
+    <a class="button button-small button-secondary" href="{{ url_for('export_pgn', slug=group.slug) }}">{{ icon('download') }}PGN</a>
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card" method="post" data-match-form>
+    <h2 class="card-title">{{ icon('plus') }}{{ t("Add match") }}</h2>
+
+    <div class="seg-field">
+      <span class="seg-field-label">{{ t("Game type") }}</span>
+      <div class="seg-control">
+        <label>
+          <input type="radio" name="game_type" value="standard" checked>
+          <span>{{ t("Standard") }} 1v1</span>
+        </label>
+        <label>
+          <input type="radio" name="game_type" value="one_arm_one_brain">
+          <span>2v2 {{ t("Braccio Mente") }}</span>
+        </label>
+      </div>
+      <span class="field-help" data-game-type-copy data-standard-copy="{{ t('Pick players and save.') }}" data-team-copy="{{ t('Pick the two mente players first.') }}">{{ t("Pick players and save.") }}</span>
+    </div>
+
+    <div class="form-grid">
+      <label>{{ t("White player") }} / mente
+        <select name="white_user_id" required data-player-select="white">
+          {% for member in match_members %}
+            <option value="{{ member.id }}" {% if selected_challenge and selected_challenge.challenger_user_id == member.id %}selected{% endif %}>{{ member.name }}{% if member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t("Black player") }} / mente
+        <select name="black_user_id" required data-player-select="black">
+          {% for member in match_members %}
+            <option value="{{ member.id }}" {% if selected_challenge and selected_challenge.challenged_user_id == member.id %}selected{% endif %}>{{ member.name }}{% if member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label data-team-only hidden>{{ t("White braccio teammate") }}
+        <select name="white_partner_user_id">
+          <option value="">{{ t("No teammate") }}</option>
+          {% for member in match_members %}
+            <option value="{{ member.id }}">{{ member.name }}{% if member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label data-team-only hidden>{{ t("Black braccio teammate") }}
+        <select name="black_partner_user_id">
+          <option value="">{{ t("No teammate") }}</option>
+          {% for member in match_members %}
+            <option value="{{ member.id }}">{{ member.name }}{% if member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <div class="seg-field">
+      <span class="seg-field-label">{{ t("Result") }}</span>
+      <div class="seg-control">
+        <label class="seg-white">
+          <input type="radio" name="result" value="white" required>
+          <span>1-0 {{ t("White") }}</span>
+        </label>
+        <label>
+          <input type="radio" name="result" value="draw" required>
+          <span>½-½</span>
+        </label>
+        <label class="seg-black">
+          <input type="radio" name="result" value="black" required>
+          <span>0-1 {{ t("Black") }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <label>{{ t("Played date") }}
+        <input type="date" name="played_at" value="{{ default_played_at }}" required>
+      </label>
+      <label>{{ t("Season") }}
+        <select name="season_id">
+          <option value="">{{ t("No season") }}</option>
+          {% for season in seasons %}
+            <option value="{{ season.id }}" {% if active_season and active_season.id == season.id %}selected{% endif %}>{{ season.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="span-2">{{ t("Time control") }}
+        <select name="time_control_preset" data-time-control-select>
+          <option value="">{{ t("Not specified") }}</option>
+          {% for preset in time_control_presets %}
+            <option value="{{ preset.value }}">{{ preset.label }}</option>
+          {% endfor %}
+          <option value="custom">{{ t("Custom time control") }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="form-grid" data-time-control-custom hidden>
+      <label>{{ t("Custom minutes each") }}
+        <input type="number" name="time_control_custom_minutes" min="0" max="300" value="19" data-time-control-custom-field>
+      </label>
+      <label>{{ t("Custom seconds each") }}
+        <input type="number" name="time_control_custom_seconds" min="0" max="59" value="20" data-time-control-custom-field>
+      </label>
+      <label>{{ t("Increment seconds") }}
+        <input type="number" name="time_control_custom_increment" min="0" max="120" value="0" data-time-control-custom-field>
+      </label>
+      <label>{{ t("Custom label") }}
+        <input type="text" name="time_control_custom_label" placeholder="19m 20s each" data-time-control-custom-field>
+      </label>
+    </div>
+
+    <details class="optional-panel" {% if selected_challenge %}open{% endif %}>
+      <summary>{{ icon('chevron-down') }}{{ t("Advanced / optional details") }}</summary>
+      <div class="optional-panel-body">
+        <label>{{ t("Challenge link") }}
+          <select name="challenge_id">
+            <option value="">{{ t("No linked challenge") }}</option>
+            {% for challenge in challenges %}
+              <option value="{{ challenge.id }}" {% if selected_challenge and selected_challenge.id == challenge.id %}selected{% endif %}>{{ challenge.challenger_name }} vs {{ challenge.challenged_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        {% if selected_challenge %}
+          <div class="notice-banner">{{ icon('target') }}<span>{{ t("This match will complete the linked challenge.") }}</span></div>
+        {% endif %}
+        <div class="form-grid">
+          <label>{{ t("Opening name") }}
+            <input type="text" name="opening_name" placeholder="Sicilian Defense">
+          </label>
+          <label>{{ t("Opening code") }}
+            <input type="text" name="opening_code" placeholder="B20">
+          </label>
+        </div>
+        <div class="guest-settings" data-guest-side="white">
+          <label class="checkbox-row">
+            <input type="checkbox" name="white_use_guest" value="1" data-guest-toggle>
+            <span>{{ t("Use guest user") }}: {{ t("White") }}</span>
+          </label>
+          <label hidden data-guest-input>{{ t("Guest email") }}
+            <input type="email" name="white_guest_email" placeholder="name@company.com" data-guest-email>
+          </label>
+        </div>
+        <div class="guest-settings" data-guest-side="black">
+          <label class="checkbox-row">
+            <input type="checkbox" name="black_use_guest" value="1" data-guest-toggle>
+            <span>{{ t("Use guest user") }}: {{ t("Black") }}</span>
+          </label>
+          <label hidden data-guest-input>{{ t("Guest email") }}
+            <input type="email" name="black_guest_email" placeholder="name@company.com" data-guest-email>
+          </label>
+        </div>
+        <div class="form-grid">
+          <label data-team-only hidden>{{ t("White call clarity") }}
+            <select name="white_instruction_clarity">
+              <option value="">{{ t("Not rated") }}</option>
+              {% for score in range(1, 6) %}
+                <option value="{{ score }}">{{ score }}/5</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label data-team-only hidden>{{ t("Black call clarity") }}
+            <select name="black_instruction_clarity">
+              <option value="">{{ t("Not rated") }}</option>
+              {% for score in range(1, 6) %}
+                <option value="{{ score }}">{{ score }}/5</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <label>{{ t("PGN moves") }}
+          <textarea name="pgn_text" rows="4" placeholder="1. e4 c5 2. Nf3 d6"></textarea>
+        </label>
+        <label>{{ t("Notes") }}
+          <textarea name="notes" rows="2" placeholder="{{ t('Optional notes') }}"></textarea>
+        </label>
+      </div>
+    </details>
+    <div class="button-row">
+      <button class="button" type="submit">{{ icon('check') }}{{ t("Save match") }}</button>
+    </div>
+  </form>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('clock') }}{{ t("History") }}</h2>
+      <form class="filters" method="get" data-auto-submit>
+        {{ icon('filter') }}
+        <select name="season" aria-label="{{ t('Season') }}">
+          <option value="">{{ t("All seasons") }}</option>
+          {% for season in seasons %}
+            <option value="{{ season.id }}" {% if season_filter == season.id|string %}selected{% endif %}>{{ season.name }}</option>
+          {% endfor %}
+        </select>
+        <select name="player" aria-label="{{ t('Player') }}">
+          <option value="">{{ t("All players") }}</option>
+          {% for member in members %}
+            <option value="{{ member.id }}" {% if player_filter == member.id|string %}selected{% endif %}>{{ member.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="list-stack">
+      {% for match in matches %}
+        <div class="match-row">
+          <span class="match-outcome match-outcome-{{ match.result }}">
+            {% if match.result == 'white' %}1-0{% elif match.result == 'black' %}0-1{% else %}½{% endif %}
+          </span>
+          <div class="match-main">
+            <div class="match-players">
+              <span class="{% if match.result == 'white' %}match-winner{% elif match.result == 'black' %}match-loser{% endif %}">{{ match_side_label(match, 'white') }}</span>
+              <span class="match-vs">vs</span>
+              <span class="{% if match.result == 'black' %}match-winner{% elif match.result == 'white' %}match-loser{% endif %}">{{ match_side_label(match, 'black') }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="chip chip-muted">{{ icon('calendar') }}{{ match.played_at }}</span>
+              {% if match.game_type == 'one_arm_one_brain' %}<span class="chip chip-info">2v2</span>{% endif %}
+              {% if match.confirmation_status == 'pending' %}<span class="chip chip-warning">{{ icon('clock') }}{{ t("pending") }}</span>{% endif %}
+              {% if time_control_label(match) %}<span class="chip chip-muted">{{ icon('clock') }}{{ time_control_label(match) }}</span>{% endif %}
+              {% if match.season_name %}<span class="chip chip-muted">{{ match.season_name }}</span>{% endif %}
+              {% if match.opening_name or match.opening_code %}<span class="chip chip-muted">{{ match.opening_name or t("Opening") }}{% if match.opening_code %} ({{ match.opening_code }}){% endif %}</span>{% endif %}
+            </div>
+            {% if match_role_summary(match, 'white') %}<p class="subtle-note" style="margin-top: 0.25rem;">{{ match_role_summary(match, 'white') }}</p>{% endif %}
+            {% if match_role_summary(match, 'black') %}<p class="subtle-note" style="margin: 0;">{{ match_role_summary(match, 'black') }}</p>{% endif %}
+          </div>
+          <div class="row-actions">
+            <a class="icon-button" href="{{ url_for('edit_match', slug=group.slug, match_id=match.id) }}" aria-label="{{ t('Edit') }}">{{ icon('edit') }}</a>
+            <form method="post" action="{{ url_for('delete_match', slug=group.slug, match_id=match.id) }}" onsubmit="return window.confirm('{{ t('Delete this match? Ratings will be recalculated.') }}');">
+              <button class="icon-button button-danger-ghost" type="submit" aria-label="{{ t('Delete') }}">{{ icon('trash') }}</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('swords') }}
+          <strong>{{ t("No matches match the current filters.") }}</strong>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar, delta_chip, wdl_bar, form_dots with context %}
+{% block title %}{{ profile.name }} · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="card" style="margin-bottom: 1.05rem;">
+  <div class="profile-hero">
+    {{ avatar(profile, 'avatar-xl') }}
+    <div class="profile-hero-main">
+      <div class="meta-row" style="margin: 0 0 0.3rem;">
+        {% if rank %}<span class="rank rank-{{ placement_tier(rank) }}">{{ rank }}</span>{% endif %}
+        {% if profile.selected_title %}<span class="chip chip-gold">{{ icon('crown') }}{{ profile.selected_title }}</span>{% endif %}
+        <span class="chip chip-muted">{{ role_label(profile.role) }}</span>
+        {% if profile.is_former_employee %}<span class="chip chip-muted">{{ t("Former Employee") }}</span>{% endif %}
+        {% if profile.is_placeholder %}<span class="chip chip-warning">{{ t("Unclaimed") }}</span>{% endif %}
+      </div>
+      <h1>{{ profile.name }}</h1>
+      <p>{{ profile.tagline or t("Future lunch-break legend.") }}</p>
+      <div class="meta-row">
+        {% if profile.favorite_opening %}<span class="chip chip-muted">{{ icon('scroll') }}{{ profile.favorite_opening }}</span>{% endif %}
+        {% if trend and trend.recent_form != '-' %}<span class="chip chip-muted">{{ t("Form") }} {{ form_dots(trend.recent_form) }}</span>{% endif %}
+        {% if trend and trend.win_streak > 1 %}<span class="chip chip-success">{{ icon('fire') }}{{ trend.win_streak }} {{ t("win streak") }}</span>{% endif %}
+      </div>
+      {% if profile.bio %}<p class="subtle-note" style="margin-top: 0.5rem;">{{ profile.bio }}</p>{% endif %}
+    </div>
+    <a class="button button-secondary button-small" href="{{ url_for('group_members', slug=group.slug) }}">← {{ t("Back to members") }}</a>
+  </div>
+</section>
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('crown') }}{{ t("Rating") }}</span>
+    <span class="stat-tile-value">{{ stats.rating|round|int if stats else group.starting_rating }}</span>
+    <span class="stat-tile-note">{% if rank %}#{{ rank }} / {{ member_count }}{% endif %}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('swords') }}{{ t("Games") }}</span>
+    <span class="stat-tile-value">{{ stats.games if stats else 0 }}</span>
+    <span class="stat-tile-note">{{ stats.wins if stats else 0 }}W · {{ stats.draws if stats else 0 }}D · {{ stats.losses if stats else 0 }}L</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('chart') }}{{ t("Last change") }}</span>
+    <span class="stat-tile-value">{{ delta_chip(stats.last_delta if stats else 0) }}</span>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile-label">{{ icon('users') }}2v2</span>
+    <span class="stat-tile-value">{{ braccio_stats.rating|round|int if braccio_stats and braccio_stats.games else "—" }}</span>
+    <span class="stat-tile-note">{% if braccio_stats and braccio_stats.games %}{{ braccio_stats.games }} {{ t("Games") | lower }}{% else %}{{ t("No team games yet") }}{% endif %}</span>
+  </div>
+</div>
+
+<section class="grid">
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('chart') }}{{ t("Rating history") }}</h2>
+    </div>
+    {% set standard_points = profile_series.standard %}
+    {% if standard_points and standard_points | length > 1 %}
+      {% set profile_matches = [] %}
+      {% for p in standard_points %}
+        {% set _ = profile_matches.append({"date": p.date, "label": "vs " ~ p.vs ~ " · " ~ p.o}) %}
+      {% endfor %}
+      <div class="chart-block" data-chart="line" data-chart-label="{{ t('Rating history chart') }}">
+        <script type="application/json">{{ {"matches": profile_matches, "series": [{"name": profile.name, "points": standard_points, "last": standard_points[-1].r | round | int}]} | tojson }}</script>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        {{ icon('chart') }}
+        <p>{{ t("Play more matches to see rating trends.") }}</p>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('board') }}{{ t("Color split") }}</h2>
+    </div>
+    {% if color_row %}
+      {% set white_games = color_row.white_games or 0 %}
+      {% set black_games = color_row.black_games or 0 %}
+      <div class="list-stack list-plain">
+        <div class="list-item">
+          <div style="flex: 1;">
+            <strong>{{ t("As White") }}</strong>
+            <p>{{ color_row.white_wins or 0 }} {{ t("Wins") | lower }} / {{ white_games }} {{ t("Games") | lower }}</p>
+            <span class="wdl-bar" style="margin-top: 0.3rem;">
+              {% if white_games %}
+                {% if color_row.white_wins %}<span class="wdl-w" style="flex: {{ color_row.white_wins }}"></span>{% endif %}
+                {% if white_games - (color_row.white_wins or 0) %}<span class="wdl-empty" style="flex: {{ white_games - (color_row.white_wins or 0) }}"></span>{% endif %}
+              {% else %}<span class="wdl-empty"></span>{% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="list-item">
+          <div style="flex: 1;">
+            <strong>{{ t("As Black") }}</strong>
+            <p>{{ color_row.black_wins or 0 }} {{ t("Wins") | lower }} / {{ black_games }} {{ t("Games") | lower }}</p>
+            <span class="wdl-bar" style="margin-top: 0.3rem;">
+              {% if black_games %}
+                {% if color_row.black_wins %}<span class="wdl-w" style="flex: {{ color_row.black_wins }}"></span>{% endif %}
+                {% if black_games - (color_row.black_wins or 0) %}<span class="wdl-empty" style="flex: {{ black_games - (color_row.black_wins or 0) }}"></span>{% endif %}
+              {% else %}<span class="wdl-empty"></span>{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+    <div style="margin-top: 1rem;">
+      <h3>{{ t("Unlocked titles") }}</h3>
+      {% if unlocked_titles %}
+        <div class="title-chip-row" style="margin-top: 0.4rem;">
+          {% for title in unlocked_titles %}
+            <span class="chip chip-gold">{{ title }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No titles unlocked yet.") }}</p>
+      {% endif %}
+    </div>
+  </article>
+</section>
+
+<section class="card" style="margin-top: 1.05rem;">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">{{ t("Achievements") }}</p>
+      <h2>{{ t("Achievement shelf") }}</h2>
+    </div>
+    <span class="chip chip-gold">{{ icon('medal') }}{{ unlocked_achievements | length }}</span>
+  </div>
+  {% if unlocked_achievements %}
+    <div class="achievement-grid">
+      {% for achievement in unlocked_achievements %}
+        <article class="achievement-card">
+          <div class="achievement-head">
+            <span class="achievement-icon" style="background: {{ profile.avatar_color }};">
+              <img src="{{ achievement_reward_asset(achievement.achievement_key, achievement.reward_avatar_icon) }}" alt="">
+            </span>
+            <div>
+              <strong>{{ achievement.name }}</strong>
+              <p>{{ achievement.description }}</p>
+            </div>
+          </div>
+          <div class="achievement-card-meta">
+            <span class="chip chip-gold">{{ achievement.reward_title }}</span>
+            <span>{{ achievement.unlocked_at[:10] }}</span>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      {{ icon('medal') }}
+      <p>{{ t("This achievement shelf is still empty.") }}</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}PGN · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("PGN tools") }}</p>
+    <h1>{{ t("Import and browse PGN") }}</h1>
+  </div>
+  <div class="page-actions">
+    <a class="button button-secondary" href="{{ url_for('export_pgn', slug=group.slug) }}">{{ icon('download') }}{{ t("Export PGN") }}</a>
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card" method="post">
+    <h2 class="card-title">{{ icon('upload') }}{{ t("Import PGN") }}</h2>
+    <label>{{ t("PGN bundle") }}
+      <textarea name="pgn_bundle" rows="14" placeholder='[Event "Lunchbreak ELO"]&#10;[White "Alice"]&#10;[Black "Bob"]&#10;[Result "1-0"]&#10;&#10;1. e4 e5 2. Nf3 Nc6 1-0'></textarea>
+      <span class="field-help">{{ t("Player names must match existing accounts.") }}</span>
+    </label>
+    <button class="button" type="submit">{{ icon('upload') }}{{ t("Import games") }}</button>
+  </form>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('scroll') }}{{ t("Recent PGN-backed games") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for match in matches %}
+        <div class="list-item" style="flex-direction: column; align-items: stretch;">
+          <div class="section-head" style="margin-bottom: 0.4rem;">
+            <div>
+              <strong>{{ match.white_name }} <span class="match-vs">vs</span> {{ match.black_name }}</strong>
+              <div class="meta-row">
+                <span class="chip chip-muted">{{ icon('calendar') }}{{ match.played_at }}</span>
+                {% if match.opening_name %}<span class="chip chip-muted">{{ match.opening_name }}</span>{% endif %}
+              </div>
+            </div>
+            <span class="match-outcome match-outcome-{{ match.result }}">
+              {% if match.result == 'white' %}1-0{% elif match.result == 'black' %}0-1{% else %}½{% endif %}
+            </span>
+          </div>
+          <pre class="pgn-block">{{ build_pgn(match) }}</pre>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('scroll') }}
+          <p>{{ t("No PGN-backed games yet.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

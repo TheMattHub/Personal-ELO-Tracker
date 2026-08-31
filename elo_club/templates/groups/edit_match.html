@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Edit match · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<div class="form-page-shell">
+  <section class="page-intro">
+    <div>
+      <p class="eyebrow">{{ t("Match center") }}</p>
+      <h1>{{ t("Edit match") }}</h1>
+    </div>
+    <a class="button button-secondary button-small" href="{{ url_for('group_matches', slug=group.slug) }}">← {{ t("Back") }}</a>
+  </section>
+
+  <form class="card form-card" method="post" data-match-form>
+    <div class="seg-field">
+      <span class="seg-field-label">{{ t("Game type") }}</span>
+      <div class="seg-control">
+        <label>
+          <input type="radio" name="game_type" value="standard" {% if match.game_type != 'one_arm_one_brain' %}checked{% endif %}>
+          <span>{{ t("Standard") }} 1v1</span>
+        </label>
+        <label>
+          <input type="radio" name="game_type" value="one_arm_one_brain" {% if match.game_type == 'one_arm_one_brain' %}checked{% endif %}>
+          <span>2v2 {{ t("Braccio Mente") }}</span>
+        </label>
+      </div>
+      <span class="field-help" data-game-type-copy data-standard-copy="{{ t('Adjust players and save.') }}" data-team-copy="{{ t('Pick the two mente players first.') }}">{{ t("Adjust players and save.") }}</span>
+    </div>
+
+    <div class="form-grid">
+      <label>{{ t("White player") }} / mente
+        <select name="white_user_id" required>
+          {% for member in members %}
+            <option value="{{ member.id }}" {% if match.white_user_id == member.id %}selected{% endif %}>{{ member.name }}{% if member.is_former_employee %} ({{ t("Former Employee") }}){% elif member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t("Black player") }} / mente
+        <select name="black_user_id" required>
+          {% for member in members %}
+            <option value="{{ member.id }}" {% if match.black_user_id == member.id %}selected{% endif %}>{{ member.name }}{% if member.is_former_employee %} ({{ t("Former Employee") }}){% elif member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label data-team-only hidden>{{ t("White braccio teammate") }}
+        <select name="white_partner_user_id">
+          <option value="">{{ t("No teammate") }}</option>
+          {% for member in members %}
+            <option value="{{ member.id }}" {% if match.white_partner_user_id == member.id %}selected{% endif %}>{{ member.name }}{% if member.is_former_employee %} ({{ t("Former Employee") }}){% elif member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label data-team-only hidden>{{ t("Black braccio teammate") }}
+        <select name="black_partner_user_id">
+          <option value="">{{ t("No teammate") }}</option>
+          {% for member in members %}
+            <option value="{{ member.id }}" {% if match.black_partner_user_id == member.id %}selected{% endif %}>{{ member.name }}{% if member.is_former_employee %} ({{ t("Former Employee") }}){% elif member.is_placeholder %} ({{ t("Unclaimed") }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    <div class="seg-field">
+      <span class="seg-field-label">{{ t("Result") }}</span>
+      <div class="seg-control">
+        <label class="seg-white">
+          <input type="radio" name="result" value="white" {% if match.result == 'white' %}checked{% endif %} required>
+          <span>1-0 {{ t("White") }}</span>
+        </label>
+        <label>
+          <input type="radio" name="result" value="draw" {% if match.result == 'draw' %}checked{% endif %} required>
+          <span>½-½</span>
+        </label>
+        <label class="seg-black">
+          <input type="radio" name="result" value="black" {% if match.result == 'black' %}checked{% endif %} required>
+          <span>0-1 {{ t("Black") }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <label>{{ t("Played date") }}
+        <input type="date" name="played_at" value="{{ match.played_at }}" required>
+      </label>
+      <label>{{ t("Season") }}
+        <select name="season_id">
+          <option value="">{{ t("No season") }}</option>
+          {% for season in seasons %}
+            <option value="{{ season.id }}" {% if match.season_id == season.id %}selected{% endif %}>{{ season.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="span-2">{{ t("Time control") }}
+        <select name="time_control_preset" data-time-control-select>
+          <option value="" {% if not match.time_control_base_seconds %}selected{% endif %}>{{ t("Not specified") }}</option>
+          {% for preset in time_control_presets %}
+            <option value="{{ preset.value }}" {% if time_control_preset_value(match) == preset.value %}selected{% endif %}>{{ preset.label }}</option>
+          {% endfor %}
+          <option value="custom" {% if time_control_preset_value(match) == 'custom' %}selected{% endif %}>{{ t("Custom time control") }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="form-grid" data-time-control-custom hidden>
+      <label>{{ t("Custom minutes each") }}
+        <input type="number" name="time_control_custom_minutes" min="0" max="300" value="{{ (match.time_control_base_seconds or 0) // 60 }}" data-time-control-custom-field>
+      </label>
+      <label>{{ t("Custom seconds each") }}
+        <input type="number" name="time_control_custom_seconds" min="0" max="59" value="{{ (match.time_control_base_seconds or 0) % 60 }}" data-time-control-custom-field>
+      </label>
+      <label>{{ t("Increment seconds") }}
+        <input type="number" name="time_control_custom_increment" min="0" max="120" value="{{ match.time_control_increment_seconds or 0 }}" data-time-control-custom-field>
+      </label>
+      <label>{{ t("Custom label") }}
+        <input type="text" name="time_control_custom_label" value="{{ match.time_control_label or '' }}" placeholder="19m 20s each" data-time-control-custom-field>
+      </label>
+    </div>
+
+    <details class="optional-panel" {% if match.opening_name or match.opening_code or match.notes or match.pgn_text or match.white_instruction_clarity or match.black_instruction_clarity %}open{% endif %}>
+      <summary>{{ icon('chevron-down') }}{{ t("Advanced / optional details") }}</summary>
+      <div class="optional-panel-body">
+        <div class="form-grid">
+          <label>{{ t("Opening name") }}
+            <input type="text" name="opening_name" value="{{ match.opening_name or '' }}" placeholder="French Defense">
+          </label>
+          <label>{{ t("Opening code") }}
+            <input type="text" name="opening_code" value="{{ match.opening_code or '' }}" placeholder="C00">
+          </label>
+          <label data-team-only hidden>{{ t("White call clarity") }}
+            <select name="white_instruction_clarity">
+              <option value="">{{ t("Not rated") }}</option>
+              {% for score in range(1, 6) %}
+                <option value="{{ score }}" {% if match.white_instruction_clarity == score %}selected{% endif %}>{{ score }}/5</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label data-team-only hidden>{{ t("Black call clarity") }}
+            <select name="black_instruction_clarity">
+              <option value="">{{ t("Not rated") }}</option>
+              {% for score in range(1, 6) %}
+                <option value="{{ score }}" {% if match.black_instruction_clarity == score %}selected{% endif %}>{{ score }}/5</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <label>{{ t("PGN moves") }}
+          <textarea name="pgn_text" rows="4">{{ match.pgn_text or '' }}</textarea>
+        </label>
+        <label>{{ t("Notes") }}
+          <textarea name="notes" rows="2">{{ match.notes or '' }}</textarea>
+        </label>
+      </div>
+    </details>
+    <div class="button-row">
+      <button class="button" type="submit">{{ icon('check') }}{{ t("Save changes") }}</button>
+      <a class="button button-ghost" href="{{ url_for('group_matches', slug=group.slug) }}">{{ t("Cancel") }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

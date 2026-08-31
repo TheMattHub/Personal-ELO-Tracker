@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar with context %}
+{% block title %}Hall of Fame · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Recognition") }}</p>
+    <h1>{{ t("Hall of Fame") }}</h1>
+    <p>{{ t("Champions, records, and season winners.") }}</p>
+  </div>
+</section>
+
+<section class="grid">
+  <article class="card">
+    <div class="winner-hero">
+      {{ icon('crown', 'winner-crown') }}
+      {% if hall_of_fame.champion %}
+        {{ avatar(hall_of_fame.champion, 'avatar-xl') }}
+        <h2 style="margin-top: 0.4rem;">{{ hall_of_fame.champion.name }}</h2>
+        <div class="podium-rating">{{ hall_of_fame.champion.rating|round|int }}</div>
+        <span class="chip chip-gold">{{ icon('crown') }}{{ t("Current champion") }}</span>
+      {% else %}
+        <p class="subtle-note">{{ t("No champion yet.") }}</p>
+      {% endif %}
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('medal', 'tint-ember') }}{{ t("Group records") }}</h2>
+    </div>
+    <div class="list-stack">
+      <div class="list-item">
+        <div class="person-cell">
+          <span class="rank">{{ icon('swords') }}</span>
+          <div>
+            <strong>{{ hall_of_fame.most_wins.name if hall_of_fame.most_wins else "—" }}</strong>
+            <p>{{ t("Most wins") }}{% if hall_of_fame.most_wins %} · {{ hall_of_fame.most_wins.total }}{% endif %}</p>
+          </div>
+        </div>
+      </div>
+      <div class="list-item">
+        <div class="person-cell">
+          <span class="rank">{{ icon('bolt') }}</span>
+          <div>
+            <strong>{{ hall_of_fame.busiest.name if hall_of_fame.busiest else "—" }}</strong>
+            <p>{{ t("Most active") }}{% if hall_of_fame.busiest %} · {{ hall_of_fame.busiest.total }} {{ t("Games") | lower }}{% endif %}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('trophy', 'tint-gold') }}{{ t("Tournament title holders") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for winner in hall_of_fame.tournament_winners %}
+        <div class="list-item">
+          <div class="person-cell">
+            <span class="rank rank-gold">{{ icon('trophy') }}</span>
+            <div>
+              <strong>{{ winner.name }}</strong>
+              <p>{{ winner.titles }} {{ t("titles") }}</p>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('trophy', 'tint-gold') }}
+          <p>{{ t("No tournament champions yet.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('calendar') }}{{ t("Season winners") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for season in season_summaries %}
+        <div class="list-item">
+          <div>
+            <strong>{{ season.season_name }}</strong>
+            {% if season.is_active %}
+              <p>{{ t("Season is not closed yet.") }}
+                {% if season.end_date %}{{ t("Ends on {end_date}.", end_date=season.end_date) }}{% endif %}
+                {% if season.player_name %}{{ t("Current leader: {player_name} on {rating}.", player_name=season.player_name, rating=season.rating_after|round|int) }}{% else %}{{ t("No leader yet.") }}{% endif %}
+              </p>
+            {% elif season.player_name %}
+              <p>{{ season.player_name }} finished on {{ season.rating_after|round|int }}</p>
+            {% else %}
+              <p>{{ t("No leader yet.") }}</p>
+            {% endif %}
+          </div>
+          {% if season.is_active %}
+            <span class="chip chip-success">{{ icon('check') }}{{ t("Active") }}</span>
+          {% else %}
+            <span class="chip chip-gold">{{ icon('trophy', 'tint-gold') }}{{ t("Closed") }}</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('calendar') }}
+          <p>{{ t("Season winners will appear after seasons accumulate games.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

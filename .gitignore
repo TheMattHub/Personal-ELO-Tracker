@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+instance/
+*.sqlite3
+
+# Auto-generated backup snapshots (may contain real player data) — never commit these.
+# See demo-data/ for the small fictional dataset that ships with the repo instead.
+data/snapshots/*.json
+!data/snapshots/.gitkeep

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Create group · Lunchbreak ELO{% endblock %}
+{% block content %}
+<div class="form-page-shell">
+  <section class="page-intro">
+    <div>
+      <p class="eyebrow">{{ t("New workspace") }}</p>
+      <h1>{{ t("Create a private ELO group") }}</h1>
+      <p>{{ t("Set up a private group for your company.") }}</p>
+    </div>
+  </section>
+
+  <form class="card form-card" method="post">
+    <div class="form-grid">
+      <label>{{ t("Group name") }}
+        <input type="text" name="name" required>
+      </label>
+      <label>{{ t("URL slug") }}
+        <input type="text" name="slug" placeholder="company-chess-club" required>
+        <span class="field-help">{{ t("Letters, numbers, and hyphens.") }}</span>
+      </label>
+    </div>
+    <label>{{ t("Description") }}
+      <textarea name="description" rows="3"></textarea>
+    </label>
+    <label>{{ t("Company email domain") }}
+      <input type="text" name="company_domain" placeholder="company.com">
+      <span class="field-help">{{ t("Optional: restrict joining to company email addresses.") }}</span>
+    </label>
+    <div class="form-grid">
+      <label>{{ t("Starting rating") }}
+        <input type="number" name="starting_rating" min="100" value="1200" required>
+      </label>
+      <label>{{ t("K-factor") }}
+        <input type="number" name="default_k_factor" min="4" value="24" required>
+      </label>
+    </div>
+    <div class="button-row">
+      <button class="button" type="submit">{{ icon('plus') }}{{ t("Create group") }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

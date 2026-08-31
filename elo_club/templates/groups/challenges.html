@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar with context %}
+{% block title %}Challenges · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Callouts") }}</p>
+    <h1>{{ t("Challenge another player") }}</h1>
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card" method="post">
+    <input type="hidden" name="action" value="create">
+    <h2 class="card-title">{{ icon('target', 'tint-ember') }}{{ t("New challenge") }}</h2>
+    <label>{{ t("Opponent") }}
+      <select name="challenged_user_id">
+        {% for member in members %}
+          {% if member.id != g.user.id %}
+            <option value="{{ member.id }}">{{ member.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ t("Message") }}
+      <textarea name="message" rows="3" placeholder="{{ t('Loser buys coffee.') }}"></textarea>
+    </label>
+    <button class="button" type="submit">{{ icon('send') }}{{ t("Send challenge") }}</button>
+  </form>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('swords', 'tint-ember') }}{{ t("Challenge board") }}</h2>
+    </div>
+    <div class="challenge-board">
+      {% for challenge in challenges %}
+        <article class="challenge-card challenge-card-{{ challenge.status }}">
+          <div class="challenge-topline">
+            <span class="chip {% if challenge.status == 'open' %}chip-warning{% elif challenge.status == 'accepted' %}chip-accent{% elif challenge.status == 'completed' %}chip-success{% else %}chip-muted{% endif %}">{{ challenge_status_label(challenge.status) }}</span>
+            <span class="challenge-age">{{ challenge_age_label(challenge.created_at) }}</span>
+          </div>
+          <div class="challenge-fight">
+            <div class="challenge-fighter">
+              {{ avatar({'id': challenge.challenger_user_id, 'name': challenge.challenger_name, 'avatar_color': challenge.challenger_avatar_color if challenge.challenger_avatar_color is defined else '#b5472f', 'avatar_icon': challenge.challenger_avatar_icon if challenge.challenger_avatar_icon is defined else 'initials'}) }}
+              <strong>{{ challenge.challenger_name }}</strong>
+              <small class="subtle-note">{{ t("challenger") }}</small>
+            </div>
+            <div class="challenge-clash">{{ icon('swords', 'tint-ember') }}</div>
+            <div class="challenge-fighter">
+              {{ avatar({'id': challenge.challenged_user_id, 'name': challenge.challenged_name, 'avatar_color': challenge.challenged_avatar_color if challenge.challenged_avatar_color is defined else '#b5472f', 'avatar_icon': challenge.challenged_avatar_icon if challenge.challenged_avatar_icon is defined else 'initials'}) }}
+              <strong>{{ challenge.challenged_name }}</strong>
+              <small class="subtle-note">{{ t("challenged") }}</small>
+            </div>
+          </div>
+          {% if challenge.message %}
+            <p class="challenge-message">“{{ challenge.message }}”</p>
+          {% endif %}
+          <div class="row-actions challenge-actions">
+            {% if challenge.status in ['open', 'accepted'] and (challenge.challenger_user_id == g.user.id or challenge.challenged_user_id == g.user.id) %}
+              <a class="button button-small" href="{{ url_for('group_matches', slug=group.slug, challenge=challenge.id) }}">{{ icon('check') }}{{ t("Log result") }}</a>
+            {% endif %}
+            {% if challenge.status == 'open' and challenge.challenged_user_id == g.user.id %}
+              <form method="post">
+                <input type="hidden" name="action" value="accept">
+                <input type="hidden" name="challenge_id" value="{{ challenge.id }}">
+                <button class="button button-small button-secondary" type="submit">{{ t("Accept") }}</button>
+              </form>
+              <form method="post">
+                <input type="hidden" name="action" value="decline">
+                <input type="hidden" name="challenge_id" value="{{ challenge.id }}">
+                <button class="button button-small button-ghost" type="submit">{{ t("Decline") }}</button>
+              </form>
+            {% endif %}
+          </div>
+        </article>
+      {% else %}
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          {{ icon('target', 'tint-ember') }}
+          <strong>{{ t("No challenges yet.") }}</strong>
+          <p>{{ t("Send the first callout and get a game on the calendar.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

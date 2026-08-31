@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" role="img" aria-label="Versus">
+  <defs>
+    <linearGradient id="blade" x1="12" y1="12" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff8ee"/>
+      <stop offset=".45" stop-color="#f3dfca"/>
+      <stop offset="1" stop-color="#b88918"/>
+    </linearGradient>
+  </defs>
+  <circle cx="36" cy="36" r="32" fill="#221d1a"/>
+  <path d="M18 54 50 22l5 5-32 32-7 1 2-6Z" fill="url(#blade)"/>
+  <path d="M54 54 22 22l-5 5 32 32 7 1-2-6Z" fill="url(#blade)"/>
+  <circle cx="36" cy="36" r="15" fill="#b44f33"/>
+  <text x="36" y="41" text-anchor="middle" font-size="12" font-family="Verdana, sans-serif" font-weight="900" fill="#fff8ee">VS</text>
+</svg>

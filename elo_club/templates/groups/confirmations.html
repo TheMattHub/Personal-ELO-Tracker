@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Confirmations · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Verification") }}</p>
+    <h1>{{ t("Pending result confirmations") }}</h1>
+    <p>{{ t("Player-submitted results wait here until an opponent or admin confirms them.") }}</p>
+  </div>
+</section>
+
+<article class="card">
+  <div class="list-stack">
+    {% for match in pending_matches %}
+      <div class="match-row">
+        <span class="match-outcome match-outcome-{{ match.result }}">
+          {% if match.result == 'white' %}1-0{% elif match.result == 'black' %}0-1{% else %}½{% endif %}
+        </span>
+        <div class="match-main">
+          <div class="match-players">
+            <span class="{% if match.result == 'white' %}match-winner{% elif match.result == 'black' %}match-loser{% endif %}">{{ match_side_label(match, 'white') }}</span>
+            <span class="match-vs">vs</span>
+            <span class="{% if match.result == 'black' %}match-winner{% elif match.result == 'white' %}match-loser{% endif %}">{{ match_side_label(match, 'black') }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="chip chip-muted">{{ icon('calendar') }}{{ match.played_at }}</span>
+            {% if match.game_type == 'one_arm_one_brain' %}<span class="chip chip-info">2v2</span>{% endif %}
+            {% if time_control_label(match) %}<span class="chip chip-muted">{{ icon('clock') }}{{ time_control_label(match) }}</span>{% endif %}
+            <span class="chip chip-muted">{{ t("reported by") }} {{ match.reporter_name }}</span>
+          </div>
+        </div>
+        {% if can_confirm_match(group, match) %}
+          <form method="post">
+            <input type="hidden" name="match_id" value="{{ match.id }}">
+            <button class="button button-small" type="submit">{{ icon('check') }}{{ t("Confirm") }}</button>
+          </form>
+        {% else %}
+          <span class="chip chip-warning">{{ icon('clock') }}{{ t("Waiting for opponent/admin") }}</span>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        {{ icon('check-badge') }}
+        <strong>{{ t("No pending matches.") }}</strong>
+        <p>{{ t("Everything on the ladder is confirmed.") }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</article>
+{% endblock %}

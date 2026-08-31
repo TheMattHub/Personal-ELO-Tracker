@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Tournaments · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Side competitions") }}</p>
+    <h1>{{ t("Create mini tournaments") }}</h1>
+    <p>{{ t("Run round-robin or knockout events for bragging rights, lunch leagues, and short cups.") }}</p>
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card" method="post">
+    <input type="hidden" name="action" value="create">
+    <h2 class="card-title">{{ icon('trophy') }}{{ t("New tournament") }}</h2>
+    <label>{{ t("Name") }}
+      <input type="text" name="name" placeholder="April Blitz Cup" required>
+    </label>
+    <label>{{ t("Format") }}
+      <select name="format">
+        <option value="round_robin">{{ t("Round robin") }}</option>
+        <option value="knockout">{{ t("Knockout") }}</option>
+        <option value="swiss">{{ t("Swiss") }}</option>
+      </select>
+    </label>
+    <fieldset class="checkbox-stack">
+      <legend>{{ t("Participants") }}</legend>
+      {% for member in members %}
+        <label class="checkbox-row">
+          <input type="checkbox" name="participant_ids" value="{{ member.id }}">
+          {{ member.name }}
+        </label>
+      {% endfor %}
+    </fieldset>
+    <button class="button" type="submit">{{ icon('plus') }}{{ t("Create tournament") }}</button>
+  </form>
+
+  <div class="span-2 rail-stack">
+    {% for tournament in tournaments %}
+      <article class="card">
+        <div class="section-head">
+          <div>
+            <h2 class="card-title">{{ icon('trophy') }}{{ tournament.name }}</h2>
+            <div class="meta-row">
+              <span class="chip chip-muted">{{ tournament.format|replace('_', ' ')|title }}</span>
+              <span class="chip {% if tournament.status == 'completed' %}chip-success{% elif tournament.status == 'active' %}chip-accent{% else %}chip-muted{% endif %}">{{ tournament.status|title }}</span>
+              {% if tournament.winner_name %}<span class="chip chip-gold">{{ icon('crown') }}{{ tournament.winner_name }}</span>{% endif %}
+            </div>
+          </div>
+          {% if tournament.status != 'completed' %}
+            <div class="row-actions">
+              {% if tournament.format == 'swiss' %}
+                <form method="post">
+                  <input type="hidden" name="action" value="pair_next">
+                  <input type="hidden" name="tournament_id" value="{{ tournament.id }}">
+                  <button class="button button-small button-secondary" type="submit">{{ t("Next round") }}</button>
+                </form>
+              {% endif %}
+              <form method="post">
+                <input type="hidden" name="action" value="finish">
+                <input type="hidden" name="tournament_id" value="{{ tournament.id }}">
+                <button class="button button-small button-ghost" type="submit">{{ icon('check') }}{{ t("Finish") }}</button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="form-grid" style="align-items: start;">
+          <div>
+            <h3>{{ t("Standings") }}</h3>
+            <div class="list-stack list-plain" style="margin-top: 0.4rem;">
+              {% for row in standings_by_tournament[tournament.id] %}
+                <div class="list-item">
+                  <div class="person-cell">
+                    <span class="rank rank-{{ placement_tier(loop.index) }}">{{ loop.index }}</span>
+                    <strong>{{ row.name }}</strong>
+                  </div>
+                  <span class="lb-rating">{{ row.total_points or 0 }}</span>
+                </div>
+              {% else %}
+                <p class="subtle-note">{{ t("No scores yet.") }}</p>
+              {% endfor %}
+            </div>
+          </div>
+          <div>
+            <h3>{{ t("Games") }}</h3>
+            <div class="list-stack" style="margin-top: 0.4rem;">
+              {% for game in games_by_tournament[tournament.id] %}
+                <div class="list-item" style="flex-wrap: wrap;">
+                  <div>
+                    <strong>{{ game.white_name }} <span class="match-vs">vs</span> {{ game.black_name }}</strong>
+                    <div class="meta-row">
+                      <span class="chip chip-muted">{{ game.round_name or t("Round") }}</span>
+                      {% if game.result %}
+                        <span class="chip {% if game.result == 'draw' %}chip-muted{% else %}chip-success{% endif %}">
+                          {% if game.result == 'white' %}1-0{% elif game.result == 'black' %}0-1{% else %}½-½{% endif %}
+                        </span>
+                      {% else %}
+                        <span class="chip chip-warning">{{ t("Unplayed") }}</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if tournament.status != 'completed' and not game.result %}
+                    <form method="post" class="inline-form">
+                      <input type="hidden" name="action" value="record">
+                      <input type="hidden" name="game_id" value="{{ game.id }}">
+                      <select name="result" style="width: auto; padding: 0.3rem 1.8rem 0.3rem 0.55rem; font-size: 0.8rem;">
+                        <option value="white">1-0</option>
+                        <option value="black">0-1</option>
+                        <option value="draw">½-½</option>
+                      </select>
+                      <input type="date" name="played_at" required style="width: auto; padding: 0.3rem 0.5rem; font-size: 0.8rem;">
+                      <button class="button button-small button-secondary" type="submit">{{ t("Save") }}</button>
+                    </form>
+                  {% elif tournament.status != 'completed' and game.result %}
+                    <form method="post" class="inline-form">
+                      <input type="hidden" name="action" value="record">
+                      <input type="hidden" name="game_id" value="{{ game.id }}">
+                      <select name="result" style="width: auto; padding: 0.3rem 1.8rem 0.3rem 0.55rem; font-size: 0.8rem;">
+                        <option value="white" {% if game.result == 'white' %}selected{% endif %}>1-0</option>
+                        <option value="black" {% if game.result == 'black' %}selected{% endif %}>0-1</option>
+                        <option value="draw" {% if game.result == 'draw' %}selected{% endif %}>½-½</option>
+                      </select>
+                      <input type="date" name="played_at" value="{{ game.played_at or '' }}" required style="width: auto; padding: 0.3rem 0.5rem; font-size: 0.8rem;">
+                      <button class="button button-small button-ghost" type="submit">{{ t("Save") }}</button>
+                    </form>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </article>
+    {% else %}
+      <article class="card">
+        <div class="empty-state">
+          {{ icon('trophy') }}
+          <strong>{{ t("No tournaments yet") }}</strong>
+          <p>{{ t("Create a quick cup and let the group chase a side trophy.") }}</p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

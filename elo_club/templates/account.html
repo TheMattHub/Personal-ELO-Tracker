@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar with context %}
+{% block title %}My account · Lunchbreak ELO{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Profile") }}</p>
+    <h1>{{ t("Customize your player card") }}</h1>
+    <p>{{ t("Keep it light: a color avatar, a short tagline, and a bit of chess personality.") }}</p>
+  </div>
+</section>
+
+<section class="grid">
+  <article class="card">
+    <div class="profile-hero" style="flex-direction: column; text-align: center;">
+      {{ avatar(profile, 'avatar-xl') }}
+      {% if profile.selected_title %}
+        <span class="chip chip-gold">{{ icon('crown') }}{{ profile.selected_title }}</span>
+      {% endif %}
+      <div>
+        <h2>{{ profile.name }}</h2>
+        <p>{{ profile.tagline or t("Future lunch-break legend.") }}</p>
+      </div>
+      {% if profile.favorite_opening %}
+        <span class="chip chip-muted">{{ icon('scroll') }}{{ profile.favorite_opening }}</span>
+      {% endif %}
+      {% if profile.bio %}
+        <p class="subtle-note">{{ profile.bio }}</p>
+      {% endif %}
+    </div>
+  </article>
+
+  <form class="card form-card span-2" method="post" enctype="multipart/form-data">
+    <div class="form-grid">
+      <label>{{ t("Name") }}
+        <input type="text" name="name" value="{{ profile.name }}" required>
+      </label>
+      <label>{{ t("Tagline") }}
+        <input type="text" name="tagline" maxlength="80" value="{{ profile.tagline or '' }}" placeholder="King's Gambit enthusiast">
+      </label>
+      <label>{{ t("Favorite opening") }}
+        <input type="text" name="favorite_opening" value="{{ profile.favorite_opening or '' }}" placeholder="Sicilian Defense">
+      </label>
+      <label>{{ t("Title") }}
+        <select name="selected_title">
+          <option value="">{{ t("No title") }}</option>
+          {% for title in unlocked_titles %}
+            <option value="{{ title }}" {% if profile.selected_title == title %}selected{% endif %}>{{ title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t("Avatar color") }}
+        <input type="color" name="avatar_color" value="{{ profile.avatar_color }}">
+      </label>
+      <label>{{ t("Custom avatar image") }}
+        <input type="file" name="avatar_upload" accept="image/png,image/jpeg,image/webp,image/gif">
+      </label>
+    </div>
+
+    {% if profile.avatar_upload_data %}
+      <div class="avatar-picker">
+        <span class="avatar-picker-label">{{ t("Uploaded avatar") }}</span>
+        <div class="avatar-choice-grid">
+          <label class="avatar-choice">
+            <input type="radio" name="avatar_icon" value="uploaded" {% if (profile.avatar_icon or 'initials') == 'uploaded' %}checked{% endif %}>
+            <span class="avatar-choice-card" style="background: {{ profile.avatar_color }};">
+              <img src="{{ avatar_asset('uploaded', profile.id) }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+            </span>
+            <span class="avatar-choice-name">{{ t("Use uploaded image") }}</span>
+          </label>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="avatar-picker">
+      <span class="avatar-picker-label">{{ t("Avatar icon") }}</span>
+      <div class="avatar-choice-grid">
+        {% for code, label in base_avatar_choices %}
+          <label class="avatar-choice">
+            <input type="radio" name="avatar_icon" value="{{ code }}" {% if (profile.avatar_icon or 'initials') == code %}checked{% endif %}>
+            <span class="avatar-choice-card" style="background: {{ profile.avatar_color }};">
+              {% if code == 'initials' %}
+                <span>{{ avatar_initials(profile.name) }}</span>
+              {% else %}
+                <img src="{{ avatar_asset(code, profile.id) }}" alt="">
+              {% endif %}
+            </span>
+            <span class="avatar-choice-name">{{ t(label) }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="avatar-picker">
+      <span class="avatar-picker-label">{{ t("Achievement icons") }}</span>
+      {% if reward_avatar_choices %}
+        <div class="avatar-choice-grid">
+          {% for choice in reward_avatar_choices %}
+            <label class="avatar-choice">
+              <input type="radio" name="avatar_icon" value="{{ choice.code }}" {% if (profile.avatar_icon or 'initials') == choice.code %}checked{% endif %}>
+              <span class="avatar-choice-card" style="background: {{ profile.avatar_color }};">
+                <img src="{{ choice.asset }}" alt="">
+              </span>
+              <span class="avatar-choice-name">{{ choice.label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="subtle-note">{{ t("No achievement icons unlocked yet.") }}</p>
+      {% endif %}
+    </div>
+
+    <label>{{ t("Bio") }}
+      <textarea name="bio" rows="4" placeholder="{{ t('Tell the group how you play.') }}">{{ profile.bio or '' }}</textarea>
+    </label>
+    <div class="button-row">
+      <button class="button" type="submit">{{ icon('check') }}{{ t("Save profile") }}</button>
+    </div>
+  </form>
+</section>
+
+<section class="card" style="margin-top: 1.05rem;">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">{{ t("Achievements") }}</p>
+      <h2>{{ t("Unlocked titles and rewards") }}</h2>
+    </div>
+    <span class="chip chip-gold">{{ icon('medal') }}{{ unlocked_achievements | length }}</span>
+  </div>
+  {% if unlocked_achievements %}
+    <div class="achievement-grid">
+      {% for achievement in unlocked_achievements %}
+        <article class="achievement-card">
+          <div class="achievement-head">
+            <span class="achievement-icon" style="background: {{ profile.avatar_color }};">
+              <img src="{{ achievement_reward_asset(achievement.achievement_key, achievement.reward_avatar_icon) }}" alt="">
+            </span>
+            <div>
+              <strong>{{ achievement.name }}</strong>
+              <p>{{ achievement.description }}</p>
+            </div>
+          </div>
+          <div class="achievement-card-meta">
+            <span class="chip chip-gold">{{ achievement.reward_title }}</span>
+            {% if achievement.group_name %}
+              <span>{{ achievement.group_name }} · {{ achievement.unlocked_at[:10] }}</span>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      {{ icon('medal') }}
+      <strong>{{ t("Your achievement shelf is still empty.") }}</strong>
+      <p>{{ t("Your first unlock will appear here.") }}</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

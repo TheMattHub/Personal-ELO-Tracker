@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Glove Dropper achievement">
+  <circle cx="80" cy="80" r="72" fill="#fff8ee"/>
+  <circle cx="80" cy="80" r="61" fill="#b44f33"/>
+  <path d="M49 97c-7-18 4-39 23-45 7-2 16-1 21 5 5 5 5 14-1 19l-8 7 19 16-12 14-18-16-7 8c-6 7-14 4-17-8Z" fill="#fff1d0"/>
+  <path d="M101 42l15 9-10 15-15-9 10-15Z" fill="#215d75"/>
+  <path d="M49 107h49l8 20H43l6-20Z" fill="#221d1a" opacity=".82"/>
+  <path d="M59 116h36" stroke="#ffd98b" stroke-width="7" stroke-linecap="round"/>
+</svg>

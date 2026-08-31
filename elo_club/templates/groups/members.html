@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar, delta_chip with context %}
+{% block title %}Members · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Roster") }}</p>
+    <h1>{{ t("{group_name} members", group_name=group.name) }}</h1>
+  </div>
+  <span class="chip chip-accent">{{ icon('users') }}{{ members | length }}</span>
+</section>
+
+<article class="card">
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ t("Player") }}</th>
+          <th class="lb-optional">{{ t("Email") }}</th>
+          <th class="num">{{ t("Rating") }}</th>
+          <th class="num lb-optional">{{ t("Games") }}</th>
+          <th class="num">±</th>
+          {% if group.membership_role in ['owner', 'admin'] %}<th>{{ t("Manage") }}</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          {% set stats = stats_by_user.get(member.id) %}
+          <tr {% if member.id == g.user.id %}class="lb-row-me"{% endif %}>
+            <td>
+              <div class="person-cell">
+                <a class="avatar-link avatar-profile-link" aria-label="{{ t('View profile') }}: {{ member.name }}" href="{{ url_for('group_member_profile', slug=group.slug, user_id=member.id) }}">{{ avatar(member) }}</a>
+                <div>
+                  <a class="person-name" href="{{ url_for('group_member_profile', slug=group.slug, user_id=member.id) }}">{{ member.name }}</a>
+                  <span class="meta-row" style="margin-top: 0.15rem;">
+                    <span class="chip chip-muted">{{ role_label(member.role) }}</span>
+                    {% if member.is_former_employee %}<span class="chip chip-muted">{{ t("Former Employee") }}</span>{% endif %}
+                    {% if member.is_placeholder %}<span class="chip chip-warning">{{ t("Unclaimed") }}</span>{% endif %}
+                    {% if member.selected_title %}<span class="chip chip-gold">{{ icon('crown') }}{{ member.selected_title }}</span>{% endif %}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="lb-optional">{{ member.email }}</td>
+            <td class="num"><span class="lb-rating">{{ stats.rating|round|int if stats else group.starting_rating }}</span></td>
+            <td class="num lb-optional">{{ stats.games if stats else 0 }}</td>
+            <td class="num">{{ delta_chip(stats.last_delta if stats else 0) }}</td>
+            {% if group.membership_role in ['owner', 'admin'] %}
+              <td>
+                {% if member.role != 'owner' %}
+                  <div class="row-actions">
+                    <form method="post" class="inline-form">
+                      <input type="hidden" name="action" value="role">
+                      <input type="hidden" name="member_id" value="{{ member.id }}">
+                      <select name="role" style="width: auto; padding: 0.28rem 1.8rem 0.28rem 0.55rem; font-size: 0.8rem;">
+                        <option value="member" {% if member.role == 'member' %}selected{% endif %}>{{ t("Member") }}</option>
+                        <option value="admin" {% if member.role == 'admin' %}selected{% endif %}>{{ t("Admin") }}</option>
+                      </select>
+                      <button class="button button-small button-secondary" type="submit">{{ t("Save") }}</button>
+                    </form>
+                    {% if not member.is_former_employee %}
+                      <form method="post">
+                        <input type="hidden" name="action" value="mark_former_employee">
+                        <input type="hidden" name="member_id" value="{{ member.id }}">
+                        <button class="button button-small button-ghost" type="submit">{{ t("Mark former") }}</button>
+                      </form>
+                    {% endif %}
+                    {% if group.membership_role == 'owner' %}
+                      <form method="post" onsubmit="return window.confirm('{{ t('Remove this member from the group?') }}');">
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="member_id" value="{{ member.id }}">
+                        <button class="button button-small button-danger-ghost" type="submit">{{ icon('trash') }}{{ t("Remove") }}</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <span class="chip chip-gold">{{ icon('crown') }}{{ t("Owner") }}</span>
+                {% endif %}
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</article>
+{% endblock %}

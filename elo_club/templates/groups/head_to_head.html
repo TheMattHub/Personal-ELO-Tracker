@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar with context %}
+{% block title %}Head to head · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Rivalries") }}</p>
+    <h1>{{ t("Head-to-head breakdown") }}</h1>
+    <p>{{ t("Compare any two players and inspect their direct history.") }}</p>
+  </div>
+</section>
+
+<form class="card" method="get" style="margin-bottom: 1.05rem;">
+  <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; align-items: end;">
+    <label>{{ t("Player one") }}
+      <select name="left">
+        <option value="">{{ t("Choose a player") }}</option>
+        {% for member in members %}
+          <option value="{{ member.id }}" {% if left_id == member.id|string %}selected{% endif %}>{{ member.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ t("Player two") }}
+      <select name="right">
+        <option value="">{{ t("Choose a player") }}</option>
+        {% for member in members %}
+          <option value="{{ member.id }}" {% if right_id == member.id|string %}selected{% endif %}>{{ member.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="button" type="submit">{{ icon('versus') }}{{ t("Compare") }}</button>
+  </div>
+</form>
+
+{% if summary %}
+  <article class="card" style="margin-bottom: 1.05rem;">
+    <p class="eyebrow">{{ t("Rivalry snapshot") }}</p>
+    <div class="h2h-versus-head">
+      <div class="h2h-player">
+        {{ avatar(summary.left_player, 'avatar-lg') }}
+        <strong>{{ summary.left_player.name }}</strong>
+        <span class="h2h-big" style="color: var(--series-1);">{{ summary.left_wins }}</span>
+      </div>
+      <div class="h2h-mid">
+        <span class="chip chip-muted">{{ summary.total_games }} {{ t("Games") }}</span>
+        <span class="h2h-big" style="font-size: 1.3rem; color: var(--muted);">{{ summary.draws }}</span>
+        <span class="subtle-note">{{ t("Draws") }}</span>
+      </div>
+      <div class="h2h-player h2h-player-right">
+        {{ avatar(summary.right_player, 'avatar-lg') }}
+        <strong>{{ summary.right_player.name }}</strong>
+        <span class="h2h-big" style="color: var(--series-6);">{{ summary.right_wins }}</span>
+      </div>
+    </div>
+    {% if summary.total_games > 0 %}
+      <div class="h2h-bar" role="img" aria-label="{{ summary.left_wins }} - {{ summary.draws }} - {{ summary.right_wins }}">
+        {% if summary.left_wins %}<span class="h2h-left" style="flex: {{ summary.left_wins }}"></span>{% endif %}
+        {% if summary.draws %}<span class="h2h-draw" style="flex: {{ summary.draws }}"></span>{% endif %}
+        {% if summary.right_wins %}<span class="h2h-right" style="flex: {{ summary.right_wins }}"></span>{% endif %}
+      </div>
+      <div class="h2h-scale">
+        <span>{{ summary.left_player.name }}</span>
+        {% if summary.latest_match %}<span>{{ t("Latest match") }}: {{ summary.latest_match.played_at }}</span>{% endif %}
+        <span>{{ summary.right_player.name }}</span>
+      </div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('clock') }}{{ t("Match history") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for match in comparison %}
+        <div class="match-row">
+          <span class="match-outcome match-outcome-{{ match.result }}">
+            {% if match.result == 'white' %}1-0{% elif match.result == 'black' %}0-1{% else %}½{% endif %}
+          </span>
+          <div class="match-main">
+            <div class="match-players">
+              <span class="{% if match.result == 'white' %}match-winner{% elif match.result == 'black' %}match-loser{% endif %}">{{ match.white_name }}</span>
+              <span class="match-vs">vs</span>
+              <span class="{% if match.result == 'black' %}match-winner{% elif match.result == 'white' %}match-loser{% endif %}">{{ match.black_name }}</span>
+            </div>
+            <span class="person-sub">{{ result_label(match.result, match.white_name, match.black_name) }}</span>
+            <div class="meta-row">
+              <span class="chip chip-muted">{{ icon('calendar') }}{{ match.played_at }}</span>
+              {% if match.opening_name %}<span class="chip chip-muted">{{ match.opening_name }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('versus') }}
+          <p>{{ t("These players have not faced each other yet.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+{% elif comparison is not none %}
+  <article class="card">
+    <div class="empty-state">
+      {{ icon('versus') }}
+      <p>{{ t("These players have not faced each other yet.") }}</p>
+    </div>
+  </article>
+{% endif %}
+{% endblock %}

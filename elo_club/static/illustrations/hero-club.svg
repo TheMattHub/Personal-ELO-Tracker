@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" fill="none">
+  <rect width="720" height="520" rx="40" fill="#FFF9F0"/>
+  <rect x="58" y="74" width="604" height="372" rx="28" fill="url(#board)"/>
+  <path d="M58 130h604M58 186h604M58 242h604M58 298h604M58 354h604M58 410h604" stroke="#D4C2A6" stroke-width="4"/>
+  <path d="M134 74v372M210 74v372M286 74v372M362 74v372M438 74v372M514 74v372M590 74v372" stroke="#D4C2A6" stroke-width="4"/>
+  <circle cx="128" cy="132" r="36" fill="#215D75"/>
+  <circle cx="588" cy="188" r="36" fill="#B44F33"/>
+  <circle cx="286" cy="300" r="36" fill="#D4A43E"/>
+  <path d="M122 115h12l-2 10 6 8h-20l6-8-2-10Z" fill="#F8FBFD"/>
+  <path d="M582 170h12l-2 10 6 8h-20l6-8-2-10Z" fill="#FFF7F3"/>
+  <path d="M280 282h12l-2 10 6 8h-20l6-8-2-10Z" fill="#FFF8E6"/>
+  <rect x="96" y="28" width="220" height="26" rx="13" fill="#F4E1CC"/>
+  <rect x="484" y="466" width="142" height="20" rx="10" fill="#E5EEF3"/>
+  <defs>
+    <linearGradient id="board" x1="58" y1="74" x2="662" y2="446" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6E9D4"/>
+      <stop offset="1" stop-color="#F0DDC7"/>
+    </linearGradient>
+  </defs>
+</svg>

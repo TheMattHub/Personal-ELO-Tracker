@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Gauntlet Keeper achievement">
+  <circle cx="80" cy="80" r="72" fill="#fff8ee"/>
+  <circle cx="80" cy="80" r="61" fill="#221d1a"/>
+  <path d="M49 71c0-20 13-36 31-36s31 16 31 36c0 17-10 31-24 35v15H73v-15c-14-4-24-18-24-35Z" fill="#b88918"/>
+  <path d="M65 67h30l-5 31H70l-5-31Z" fill="#fff1d0"/>
+  <path d="M60 45h40l-9 20H69l-9-20Z" fill="#ffd98b"/>
+  <path d="M47 124h66" stroke="#fff8ee" stroke-width="10" stroke-linecap="round"/>
+  <path d="M57 126h46" stroke="#b44f33" stroke-width="5" stroke-linecap="round"/>
+  <path d="M80 18 88 34l18 2-13 12 4 18-17-9-17 9 4-18-13-12 18-2 8-16Z" fill="#f3b700"/>
+</svg>

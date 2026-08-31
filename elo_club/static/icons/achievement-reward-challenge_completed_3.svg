@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Duel Finisher achievement">
+  <circle cx="80" cy="80" r="72" fill="#fff8ee"/>
+  <circle cx="80" cy="80" r="61" fill="#2d7c74"/>
+  <path d="M43 105 108 40l10 10-65 65-17 4 7-14Z" fill="#fff1d0"/>
+  <path d="M115 103 53 41 43 51l62 62 18 5-8-15Z" fill="#f3dfca"/>
+  <path d="M54 85 73 104l38-47" fill="none" stroke="#ffd98b" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M47 118h66" stroke="#221d1a" stroke-width="10" stroke-linecap="round" opacity=".75"/>
+</svg>

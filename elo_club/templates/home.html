@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Lunchbreak ELO · Private Chess ELO for Teams{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">{{ t("Private group-based ranking") }}</p>
+    <h1>{{ t("Run your company chess ladder without spreadsheets.") }}</h1>
+    <p class="hero-copy">
+      {{ t("Lunchbreak ELO gives your colleagues a private workspace to record games, track ratings, compare rivalries, and settle who rules the lunch table.") }}
+    </p>
+    <div class="hero-pills">
+      <span class="chip">{{ icon('key') }}{{ t("Private groups") }}</span>
+      <span class="chip">{{ icon('link') }}{{ t("Shareable invites") }}</span>
+      <span class="chip">{{ icon('fire') }}{{ t("Lunch-break rivalries") }}</span>
+    </div>
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('register') }}">{{ icon('plus') }}{{ t("Create account") }}</a>
+      <a class="button button-secondary" href="{{ url_for('login') }}">{{ t("Sign in") }}</a>
+    </div>
+  </div>
+  <div class="hero-panel">
+    <div class="hero-board hero-board-card">
+      <span class="float-piece float-piece-1" aria-hidden="true"><img src="{{ url_for('static', filename='icons/avatar-knight.svg') }}" alt=""></span>
+      <span class="float-piece float-piece-2" aria-hidden="true"><img src="{{ url_for('static', filename='icons/avatar-queen.svg') }}" alt=""></span>
+      <span class="float-piece float-piece-3" aria-hidden="true"><img src="{{ url_for('static', filename='icons/avatar-coffee.svg') }}" alt=""></span>
+      <span class="float-piece float-piece-4" aria-hidden="true"><img src="{{ url_for('static', filename='icons/avatar-trophy.svg') }}" alt=""></span>
+      <div class="hero-board-top">
+        <span class="eyebrow" style="margin: 0;">{{ t("Built for internal company use") }}</span>
+        <span class="chip chip-accent">{{ t("Browser first") }}</span>
+      </div>
+      <img src="{{ url_for('static', filename='illustrations/hero-club.svg') }}" alt="{{ t('Stylized chess club board illustration') }}" class="hero-illustration">
+    </div>
+    <div class="hero-cards">
+      <article class="mini-panel">
+        {{ icon('users') }}
+        <strong>{{ t("Private groups") }}</strong>
+        <p>{{ t("Invite-only spaces with optional company restrictions.") }}</p>
+      </article>
+      <article class="mini-panel">
+        {{ icon('chart') }}
+        <strong>{{ t("Live ELO") }}</strong>
+        <p>{{ t("Ratings, seasons, rivalries, and a proper lunch-table pecking order.") }}</p>
+      </article>
+      <article class="mini-panel">
+        {{ icon('handshake') }}
+        <strong>{{ t("Team modes") }}</strong>
+        <p>{{ t("One Arm, One Brain sits alongside singles without polluting the core ladder.") }}</p>
+      </article>
+      <article class="mini-panel">
+        {{ icon('trophy') }}
+        <strong>{{ t("Tournaments & coffee bets") }}</strong>
+        <p>{{ t("Mini cups, challenges, achievements, and a treat economy.") }}</p>
+      </article>
+    </div>
+  </div>
+</section>
+{% endblock %}

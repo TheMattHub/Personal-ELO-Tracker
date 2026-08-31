@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% from "_macros.html" import avatar with context %}
+{% macro treat_meter(breakdown, total_coffees) -%}
+  <div class="treat-meter">
+    {% if breakdown.cakes %}
+      <span class="treat-pill">
+        <img src="{{ url_for('static', filename='icons/treat-cake.png') }}" alt="cake">
+        <strong>{{ breakdown.cakes }}</strong>
+      </span>
+    {% endif %}
+    {% if breakdown.pizzas %}
+      <span class="treat-pill">
+        <img src="{{ url_for('static', filename='icons/treat-pizza.png') }}" alt="pizza">
+        <strong>{{ breakdown.pizzas }}</strong>
+      </span>
+    {% endif %}
+    {% if breakdown.coffees or total_coffees == 0 %}
+      <span class="treat-pill">
+        <img src="{{ url_for('static', filename='icons/treat-coffee.png') }}" alt="coffee">
+        <strong>{{ breakdown.coffees if total_coffees else 0 }}</strong>
+      </span>
+    {% endif %}
+  </div>
+{%- endmacro %}
+{% macro treat_icon_rows(breakdown) -%}
+  <div class="coffee-balance-icons" aria-hidden="true">
+    {% if breakdown.cakes %}
+      <div class="coffee-balance-icon-row">
+        {% for _ in range(breakdown.cakes) %}
+          <img class="coffee-token coffee-token-cake" src="{{ url_for('static', filename='icons/treat-cake.png') }}" alt="" style="animation-delay: {{ (loop.index0 * 0.08)|round(2) }}s;">
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if breakdown.pizzas %}
+      <div class="coffee-balance-icon-row">
+        {% for _ in range(breakdown.pizzas) %}
+          <img class="coffee-token coffee-token-pizza" src="{{ url_for('static', filename='icons/treat-pizza.png') }}" alt="" style="animation-delay: {{ (breakdown.cakes * 0.08 + loop.index0 * 0.08)|round(2) }}s;">
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if breakdown.coffees %}
+      <div class="coffee-balance-icon-row">
+        {% for _ in range(breakdown.coffees) %}
+          <img class="coffee-token coffee-token-coffee" src="{{ url_for('static', filename='icons/treat-coffee.png') }}" alt="" style="animation-delay: {{ ((breakdown.cakes + breakdown.pizzas) * 0.08 + loop.index0 * 0.08)|round(2) }}s;">
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{%- endmacro %}
+{% block title %}Coffee ledger · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Treat economy") }}</p>
+    <h1>{{ t("Coffee ledger") }}</h1>
+    <p>{{ t("Track coffees, stack them into pizzas, and let the biggest legends graduate to cake.") }}</p>
+  </div>
+  <div class="page-actions">
+    <span class="chip chip-accent">1 🍕 = {{ treat_units.pizza }} ☕</span>
+    <span class="chip chip-accent">1 🎂 = {{ treat_units.cake }} ☕</span>
+  </div>
+</section>
+
+<section class="card coffee-hero" style="margin-bottom: 1.05rem;">
+  <div>
+    <div class="coffee-summary-grid" style="margin-top: 0;">
+      <article class="coffee-summary-card">
+        <p>{{ t("Total open tab") }}</p>
+        <strong>{{ coffee_summary.total_outstanding_label }}</strong>
+        {{ treat_meter(treat_breakdown(coffee_summary.total_outstanding), coffee_summary.total_outstanding) }}
+      </article>
+      <article class="coffee-summary-card">
+        <p>{{ t("Open promises") }}</p>
+        <strong>{{ coffee_summary.total_open_items }}</strong>
+        <span>{{ t("entries") }}</span>
+      </article>
+      <article class="coffee-summary-card">
+        <p>{{ t("Top creditor") }}</p>
+        <strong>{{ coffee_summary.top_creditor.name if coffee_summary.top_creditor else t("Nobody yet") }}</strong>
+        <span>{% if coffee_summary.top_creditor %}+{{ coffee_summary.top_creditor.net_label }}{% else %}{{ t("No open balance") }}{% endif %}</span>
+      </article>
+      <article class="coffee-summary-card">
+        <p>{{ t("Needs a treat") }}</p>
+        <strong>{{ coffee_summary.top_debtor.name if coffee_summary.top_debtor else t("All square") }}</strong>
+        <span>{% if coffee_summary.top_debtor %}-{{ coffee_summary.top_debtor.net_label }}{% else %}{{ t("Everything is settled") }}{% endif %}</span>
+      </article>
+    </div>
+  </div>
+  <div class="coffee-hero-art" aria-hidden="true">
+    <div class="coffee-orbit coffee-orbit-a"></div>
+    <div class="coffee-orbit coffee-orbit-b"></div>
+    <div class="coffee-orbit coffee-orbit-c"></div>
+    <img class="coffee-hero-icon coffee-hero-icon-coffee" src="{{ url_for('static', filename='icons/treat-coffee.png') }}" alt="">
+    <img class="coffee-hero-icon coffee-hero-icon-pizza" src="{{ url_for('static', filename='icons/treat-pizza.png') }}" alt="">
+    <img class="coffee-hero-icon coffee-hero-icon-cake" src="{{ url_for('static', filename='icons/treat-cake.png') }}" alt="">
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card span-2" method="post">
+    <input type="hidden" name="action" value="add">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('coffee', 'tint-gold') }}{{ t("Record a treat debt") }}</h2>
+      <p>{{ t("Wins and losses still create automatic coffee credits after confirmed matches.") }}</p>
+    </div>
+    <div class="form-grid">
+      <label>{{ t("Who owes") }}
+        <select name="debtor_user_id">
+          {% for member in members %}
+            <option value="{{ member.id }}">{{ member.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t("Who gets the treat") }}
+        <select name="creditor_user_id">
+          {% for member in members %}
+            <option value="{{ member.id }}">{{ member.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>{{ t("Treat type") }}
+        <select name="unit">
+          <option value="coffee">☕ {{ t("Coffee") }}</option>
+          <option value="pizza">🍕 {{ t("Pizza") }}</option>
+          <option value="cake">🎂 {{ t("Cake") }}</option>
+        </select>
+      </label>
+      <label>{{ t("How many") }}
+        <input type="number" min="1" name="unit_count" value="1">
+      </label>
+      <label class="span-2">{{ t("Reason") }}
+        <input type="text" name="reason" placeholder="{{ t('Lost the blitz rematch and upgraded the tab') }}">
+      </label>
+    </div>
+    <div class="button-row">
+      <button class="button" type="submit">{{ icon('plus') }}{{ t("Record treat") }}</button>
+    </div>
+  </form>
+
+  <article class="card">
+    <h2 class="card-title">{{ icon('spark', 'tint-violet') }}{{ t("Optimize debts") }}</h2>
+    <p>{{ t("Compress chains of open obligations into fewer direct settlements so the treat economy stays clean.") }}</p>
+    {% if group.membership_role in ["owner", "admin"] %}
+      <form method="post" onsubmit="return window.confirm('{{ t('This optimization cannot be undone. Continue?') }}');" style="margin-top: 0.6rem;">
+        <input type="hidden" name="action" value="optimize">
+        <button class="button button-secondary" type="submit">{{ t("Optimize coffee") }}</button>
+      </form>
+    {% else %}
+      <p class="subtle-note">{{ t("Only admins can optimize coffee debts.") }}</p>
+    {% endif %}
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('chart', 'tint-teal') }}{{ t("Balance board") }}</h2>
+      <p>{{ t("Positive means they are owed treats. Negative means they are carrying the tab.") }}</p>
+    </div>
+    <div class="balance-board">
+      {% for row in balances %}
+        <article class="balance-card {% if row.net_coffees > 0 %}balance-positive{% elif row.net_coffees < 0 %}balance-negative{% else %}balance-even{% endif %}">
+          <div class="balance-head">
+            <div class="person-cell">
+              {{ avatar(row) }}
+              <div>
+                <strong>{{ row.name }}</strong>
+                <p style="margin: 0; font-size: 0.76rem; color: var(--muted);">
+                  {% if row.net_coffees > 0 %}{{ t("Credited") }}{% elif row.net_coffees < 0 %}{{ t("Owes") }}{% else %}{{ t("Even") }}{% endif %}
+                </p>
+              </div>
+            </div>
+            <span class="balance-number">{{ "%+d"|format(row.net_coffees or 0) }}</span>
+          </div>
+          {% if row.net_breakdown.total_coffees %}
+            {{ treat_icon_rows(row.net_breakdown) }}
+          {% endif %}
+          {% if row.achievement_icons %}
+            <div class="coffee-achievement-strip">
+              {% for achievement in row.achievement_icons %}
+                <span class="coffee-achievement-chip" title="{{ achievement.name }}">
+                  <img src="{{ achievement.asset }}" alt="{{ achievement.name }}">
+                </span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </article>
+
+  <article class="card span-3">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('clock') }}{{ t("Open debts") }}</h2>
+      <p>{{ t("Each line keeps the original coffee accounting, but tells the story in treats too.") }}</p>
+    </div>
+    <div class="list-stack">
+      {% for item in open_items %}
+        <div class="list-item debt-row">
+          <div>
+            <div class="debt-people">
+              <div class="person-cell">
+                {{ avatar({"id": item.debtor_user_id, "name": item.debtor_name, "avatar_color": item.debtor_avatar_color, "avatar_icon": item.debtor_avatar_icon}, 'avatar-sm') }}
+                <strong>{{ item.debtor_name }}</strong>
+              </div>
+              <span class="debt-arrow">→</span>
+              <div class="person-cell">
+                {{ avatar({"id": item.creditor_user_id, "name": item.creditor_name, "avatar_color": item.creditor_avatar_color, "avatar_icon": item.creditor_avatar_icon}, 'avatar-sm') }}
+                <strong>{{ item.creditor_name }}</strong>
+              </div>
+            </div>
+            <p>{{ item.debtor_name }} {{ t("owes") }} {{ item.creditor_name }}: {{ item.amount_label }}{% if item.reason %} · {{ item.reason }}{% endif %}</p>
+            {{ treat_meter(item.amount_breakdown, item.amount) }}
+          </div>
+          <form method="post">
+            <input type="hidden" name="action" value="settle">
+            <input type="hidden" name="ledger_id" value="{{ item.id }}">
+            <button class="button button-small button-secondary" type="submit">{{ icon('check') }}{{ t("Settle") }}</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <img src="{{ url_for('static', filename='icons/treat-cake.png') }}" alt="" style="width: 2.6rem; height: 2.6rem; object-fit: contain;">
+          <strong>{{ t("Nothing outstanding. Respect.") }}</strong>
+          <p>{{ t("The board is clear, the coffee machine is calm, and nobody owes dessert.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Seasons · {{ group.name }}{% endblock %}
+{% block subheader %}{% include "groups/_subnav.html" %}{% endblock %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    <p class="eyebrow">{{ t("Season management") }}</p>
+    <h1>{{ t("Keep rankings organized over time") }}</h1>
+  </div>
+</section>
+
+<section class="grid">
+  <form class="card form-card" method="post">
+    <input type="hidden" name="action" value="create">
+    <h2 class="card-title">{{ icon('plus') }}{{ t("Create season") }}</h2>
+    <label>{{ t("Name") }}
+      <input type="text" name="name" placeholder="Q3 2026" required>
+    </label>
+    <div class="form-grid">
+      <label>{{ t("Start date") }}
+        <input type="date" name="start_date" required>
+      </label>
+      <label>{{ t("End date") }}
+        <input type="date" name="end_date">
+      </label>
+    </div>
+    <label class="checkbox-row">
+      <input type="checkbox" name="reset_ratings">
+      {{ t("Reset ratings at season start") }}
+    </label>
+    <button class="button" type="submit">{{ icon('calendar') }}{{ t("Create season") }}</button>
+  </form>
+
+  <article class="card span-2">
+    <div class="section-head">
+      <h2 class="card-title">{{ icon('calendar') }}{{ t("Season history") }}</h2>
+    </div>
+    <div class="list-stack">
+      {% for season in seasons %}
+        <div class="list-item">
+          <div>
+            <strong>{{ season.name }}</strong>
+            <div class="meta-row">
+              <span class="chip chip-muted">{{ icon('calendar') }}{{ season.start_date }}{% if season.end_date %} → {{ season.end_date }}{% endif %}</span>
+              {% if season.reset_ratings %}<span class="chip chip-info">{{ t("ratings reset") }}</span>{% endif %}
+              {% if season.is_active %}<span class="chip chip-success">{{ icon('check') }}{{ t("Active") }}</span>{% endif %}
+            </div>
+            <p>
+              {% if season.coffee_leader %}
+                {{ t("Coffee leader: {player_name} · {credited_coffees} credited", player_name=season.coffee_leader.player_name, credited_coffees=season.coffee_leader.credited_coffees) }}
+              {% else %}
+                {{ t("No credited coffees yet.") }}
+              {% endif %}
+            </p>
+          </div>
+          <form method="post">
+            <input type="hidden" name="action" value="activate">
+            <input type="hidden" name="season_id" value="{{ season.id }}">
+            <button class="button button-small {% if season.is_active %}button-ghost{% else %}button-secondary{% endif %}" type="submit" {% if season.is_active %}disabled{% endif %}>
+              {% if season.is_active %}{{ t("Active") }}{% else %}{{ t("Set active") }}{% endif %}
+            </button>
+          </form>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          {{ icon('calendar') }}
+          <p>{{ t("No seasons yet.") }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}
