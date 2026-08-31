@@ -8,14 +8,30 @@ gaming meetup: create personal accounts, join private groups by invite, customiz
 player identity, log matches, run mini tournaments, track coffee bets, and export
 standings without relying on spreadsheets.
 
-## Screenshots
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="760" alt="Group dashboard with podium, leaderboard, and activity stats">
+  <br>
+  <sub>Group dashboard — podium, leaderboard, belt holder, and coffee balance at a glance</sub>
+</p>
 
-*(shown with the fictional demo data from [`demo-data/sample-snapshot.json`](demo-data/sample-snapshot.json))*
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/rating-history.png" width="260" alt="Rating history chart for all players"><br>
+      <sub><b>Rating history</b><br>per-player ELO over time</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/profile.png" width="260" alt="Player profile customization screen"><br>
+      <sub><b>Player profiles</b><br>avatars, taglines, achievements</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/screenshots/coffee-ledger.png" width="260" alt="Coffee ledger tracking side-bets"><br>
+      <sub><b>Coffee ledger</b><br>track who owes the next round</sub>
+    </td>
+  </tr>
+</table>
 
-|     |     |
-| --- | --- |
-| ![Group dashboard](docs/screenshots/dashboard.png) | ![Rating history](docs/screenshots/rating-history.png) |
-| ![Player profile](docs/screenshots/profile.png) | ![Coffee ledger](docs/screenshots/coffee-ledger.png) |
+<p align="center"><sub>Shown with the fictional demo dataset — see <a href="demo-data/sample-snapshot.json">demo-data/sample-snapshot.json</a>.</sub></p>
 
 ## Feature set
 
