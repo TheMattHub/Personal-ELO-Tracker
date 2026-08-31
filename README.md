@@ -8,6 +8,15 @@ gaming meetup: create personal accounts, join private groups by invite, customiz
 player identity, log matches, run mini tournaments, track coffee bets, and export
 standings without relying on spreadsheets.
 
+## Screenshots
+
+*(shown with the fictional demo data from [`demo-data/sample-snapshot.json`](demo-data/sample-snapshot.json))*
+
+|     |     |
+| --- | --- |
+| ![Group dashboard](docs/screenshots/dashboard.png) | ![Rating history](docs/screenshots/rating-history.png) |
+| ![Player profile](docs/screenshots/profile.png) | ![Coffee ledger](docs/screenshots/coffee-ledger.png) |
+
 ## Feature set
 
 - Private, invite-code-only workspaces (optionally restricted by email domain)
